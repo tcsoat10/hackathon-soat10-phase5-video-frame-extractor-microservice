@@ -19,3 +19,7 @@ MERCADO_PAGO_USER_ID = os.getenv('MERCADO_PAGO_USER_ID')
 MERCADO_PAGO_POS_ID = os.getenv('MERCADO_PAGO_POS_ID')
 
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
+
+STORAGE_BUCKET = os.getenv("BUCKET_NAME", "default-bucket")
+STORAGE_VIDEO_PATH = os.getenv("VIDEO_PATH_BUCKET", "default-path-video")
+STORAGE_FRAMES_PATH = os.getenv("FRAMES_PATH_BUCKET", "default-path-frames")

@@ -17,7 +17,7 @@ class VideoJobStatus(Enum):
     @classmethod
     def status_and_descriptions(cls):
         """
-        Retorna todos os valores e descrições dos métodos de pagamento.
+        Retorna todos os valores e descrições dos métodos do Job Video.
         :return: Lista de dicionários com o status e descrição dos métodos.
         """
         return [{"status": status.status, "description": status.description} for status in cls]
@@ -25,7 +25,7 @@ class VideoJobStatus(Enum):
     @classmethod
     def method_list(cls):
         """
-        Retorna todos os status dos métodos de pagamento.
+        Retorna todos os status dos métodos do Job Video.
         :return: Lista de status dos métodos.
         """
         return [member.status for member in cls]
@@ -40,5 +40,9 @@ class VideoJobStatus(Enum):
     
     def __str__(self) -> str:
         return self.status
+    
+    def __repr__(self) -> str:
+        return self.status
+
 
 __all__ = ["VideoJobStatus"]

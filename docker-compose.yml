@@ -45,7 +45,10 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    command: poetry run celery -A config.celery_config worker --loglevel=info --queues=notifications,default
+    environment:
+      - PYTHONPATH=/app
+      - CELERY_IMPORTS=src.worker
+    command: poetry run celery -A src.config.celery_app.celery_app worker --loglevel=INFO
     restart: always
 
   celery-beat:
@@ -63,7 +66,9 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    command: poetry run celery -A config.celery_config beat --loglevel=info
+    environment:
+      - PYTHONPATH=/app
+    command: poetry run celery -A src.config.celery_app.celery_app beat --loglevel=INFO
     restart: always
 
   video-frame-extractor-microservice-redis:

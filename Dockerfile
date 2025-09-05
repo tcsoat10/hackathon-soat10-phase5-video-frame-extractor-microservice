@@ -26,6 +26,7 @@ COPY . .
 RUN rm -rf /app/.venv
 
 RUN chmod +x /app/src/config/init_db/init_db.sh
+RUN chmod +x /app/run_celery.sh
 
 ARG PORT=8001
 ENV PORT=${PORT}

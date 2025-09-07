@@ -8,8 +8,7 @@ from src.core.ports.cloud.object_storage_gateway import ObjectStorageGateway
 
 class LocalObjectStorageGateway(ObjectStorageGateway):
     """
-    Gateway de armazenamento de objetos que simula um bucket S3
-    usando o sistema de arquivos local.
+    Gateway de armazenamento de objetos que simula um bucket S3 local.
     """
     def __init__(self):
         self.base_path = Path('./bucket')
@@ -29,7 +28,6 @@ class LocalObjectStorageGateway(ObjectStorageGateway):
         return full_path
 
     def upload_object(self, item: StorageItem) -> StorageObject:
-        """Faz upload de um arquivo para o 'bucket' local."""
         full_path = self._get_full_path(item.bucket, item.key)
         with open(full_path, "wb") as f:
             f.write(item.content)
@@ -41,8 +39,7 @@ class LocalObjectStorageGateway(ObjectStorageGateway):
         )
 
     def download_object(self, bucket: str, key: str) -> bytes:
-        """Baixa um arquivo do 'bucket' local."""
-        full_path = self._get_full_path(bucket, key)  # Path, não string
+        full_path = self._get_full_path(bucket, key)
         print(f'Bucket PATH: {full_path}')
         if not full_path.exists():
             raise FileNotFoundError(f"Objeto não encontrado em {full_path}")
@@ -50,8 +47,6 @@ class LocalObjectStorageGateway(ObjectStorageGateway):
         with open(full_path, "rb") as f:
             return f.read()
 
-    # Implementar os outros métodos da interface (bulk, presign, list, delete)
-    # conforme a necessidade do projeto. Por agora, vamos focar nos principais.
     def upload_objects_bulk(self, items: List[Tuple[bytes, str]], bucket: str, prefix: str, content_type: Optional[str] = None) -> List[StorageObject]:
         storage_objects = []
         for content, key_suffix in items:
@@ -60,9 +55,7 @@ class LocalObjectStorageGateway(ObjectStorageGateway):
             storage_objects.append(self.upload_object(item))
         return storage_objects
 
-    # Métodos restantes...
     def presign_url(self, bucket: str, key: str, expiration: int = 3600) -> str:
-        # Não aplicável para o gateway local, mas precisa existir para cumprir o contrato
         return f"file://{self._get_full_path(bucket, key).resolve()}"
 
     def list_objects(self, bucket: str, prefix: str, max_keys: int = 1000) -> List[StorageObject]:

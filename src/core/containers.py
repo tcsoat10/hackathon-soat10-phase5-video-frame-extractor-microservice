@@ -3,6 +3,7 @@ from src.config.celery_app import celery_app
 
 from src.config.database import get_db
 from src.core.shared.identity_map import IdentityMap
+from src.infrastructure.gateways.s3_storage_gateway import S3StorageGateway
 from src.infrastructure.repositories.mongoengine.video_job_repository import MongoVideoJobRepository
 from src.core.ports.repositories.i_video_job_repository import IVideoJobRepository
 from src.infrastructure.gateways.local_object_storage_gateway import LocalObjectStorageGateway
@@ -27,7 +28,7 @@ class Container(containers.DeclarativeContainer):
     celery_app_provider = providers.Object(celery_app)
 
     object_storage_gateway: providers.Singleton[ObjectStorageGateway] = providers.Singleton(
-        LocalObjectStorageGateway # TODO: Substituir por implementação do bucket S3
+        S3StorageGateway
     )
     task_queue_gateway: providers.Singleton[ITaskQueueGateway] = providers.Singleton(
         CeleryTaskQueueGateway,

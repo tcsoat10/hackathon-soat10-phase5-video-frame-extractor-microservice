@@ -20,6 +20,8 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    volumes:
+      - ${STORAGE_BUCKET}:/app/bucket:rw
     ports:
       - "${APP_PORT}:${APP_PORT}"
     restart: always
@@ -45,6 +47,8 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    volumes:
+      - ${STORAGE_BUCKET}:/app/bucket:rw
     environment:
       - PYTHONPATH=/app
       - CELERY_IMPORTS=src.worker

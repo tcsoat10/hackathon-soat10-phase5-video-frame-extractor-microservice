@@ -43,16 +43,16 @@ class VideoJob(BaseEntity):
         if self.status != VideoJobStatus.PENDING:
             print(f"Warning: Job {self.job_ref} já foi iniciado.")
             return
-        self.status = VideoJobStatus.PROCESSING
+        self.status = VideoJobStatus.PROCESSING.status
         self.updated_at = datetime.now()
 
     def complete(self):
-        self.status = VideoJobStatus.COMPLETED
+        self.status = VideoJobStatus.COMPLETED.status
         self.error_message = None
         self.updated_at = datetime.now()
 
     def fail(self, reason: str):
-        self.status = VideoJobStatus.ERROR
+        self.status = VideoJobStatus.ERROR.status
         self.error_message = reason
         self.updated_at = datetime.now()
 

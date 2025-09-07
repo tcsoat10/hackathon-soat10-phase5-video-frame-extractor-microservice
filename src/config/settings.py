@@ -1,8 +1,25 @@
 import os
+import logging
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+def set_logging_level():    
+    logging_levels = {
+        'DEBUG': logging.DEBUG,
+        'INFO': logging.INFO,
+        'WARNING': logging.WARNING,
+        'ERROR': logging.ERROR,
+        'CRITICAL': logging.CRITICAL
+    }
+    
+    log_level = os.getenv("LOG_LEVEL", "INFO")
+    
+    if log_level not in logging_levels:
+        raise ValueError(f"Invalid log level: {log_level}")
+    
+    return logging_levels.get(log_level, logging.INFO)
 
 # Configurações de ambiente
 DEBUG = os.getenv("DEBUG", "true").lower() in ("true", "1")
@@ -12,7 +29,7 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")  # development, staging, p
 SERVER_HOST = os.getenv("SERVER_HOST", "localhost")
 SERVER_PORT = int(os.getenv("APP_PORT", 5000))
 
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_LEVEL = set_logging_level()
 
 MERCADO_PAGO_ACCESS_TOKEN = os.getenv("MERCADO_PAGO_ACCESS_TOKEN")
 MERCADO_PAGO_USER_ID = os.getenv('MERCADO_PAGO_USER_ID')

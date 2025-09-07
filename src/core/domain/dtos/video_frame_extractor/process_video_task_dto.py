@@ -11,11 +11,3 @@ class ProcessVideoTaskDTO(BaseModel):
     config: Optional[Dict[str, Any]] = Field({}, description="Configurações adicionais do job")
 
 __all__ = ["ProcessVideoTaskDTO"]
-{
-    'job_ref': 'aaa-e5c6fb3f-2349-49fc-8012-1330405d4231',
-    'client_identification': 'aaa',
-    'bucket': 'default-bucket',
-    'video_path': 'default-path-video',
-    'frames_path': 'default-path-frames',
-    'notify_url': 'bbb', 'config': {}
-}

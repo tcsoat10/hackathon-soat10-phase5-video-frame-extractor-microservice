@@ -15,11 +15,9 @@ task_default_queue = 'default'
 task_queues = (
     Queue('default'),
     Queue('extract_frames_queue'),
-    Queue('zip_frames_notifications_queue'),
 )
 task_routes = {
     'src.infrastructure.tasks.video_tasks.extract_frames_task': {'queue': 'extract_frames_queue'},
-    'send_zip_frames_notification_task': {'queue': 'zip_frames_notifications_queue'},
 }
 
 worker_prefetch_multiplier = 1

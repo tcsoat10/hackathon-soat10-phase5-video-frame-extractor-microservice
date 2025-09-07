@@ -37,6 +37,13 @@ MERCADO_PAGO_POS_ID = os.getenv('MERCADO_PAGO_POS_ID')
 
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
-STORAGE_BUCKET = os.getenv("BUCKET_NAME", "default-bucket")
-STORAGE_VIDEO_PATH = os.getenv("VIDEO_PATH_BUCKET", "default-path-video")
-STORAGE_FRAMES_PATH = os.getenv("FRAMES_PATH_BUCKET", "default-path-frames")
+STORAGE_BUCKET = os.getenv("NAME_BUCKET", "default-bucket")
+STORAGE_VIDEO_PATH = os.getenv("STORAGE_VIDEO_PATH", "default-path-video")
+STORAGE_FRAMES_PATH = os.getenv("STORAGE_FRAMES_PATH", "default-path-frames")
+
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
+AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
+
+SQS_QUEUE_NAME = os.getenv('SQS_QUEUE_NAME', 'extract_frames_queue')

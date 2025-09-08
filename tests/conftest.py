@@ -12,7 +12,7 @@ from src.core.containers import Container
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
-    """Setup test environment"""
+    """Setup test environment"""    
     # Set test environment variables
     os.environ['MONGO_DB'] = 'test_video_frame_extractor_microservice'
     os.environ['MONGO_HOST'] = 'localhost'
@@ -90,7 +90,23 @@ def container(mongo_db) -> Generator[Container, None, None]:
     yield container
     container.unwire()
 
+def get_headers():
+    return { "x-api-key": "test_api_key" }
 
 @pytest.fixture(autouse=True)
 def clean_database(mongo_db):
-    ...
+    try:
+        from src.infrastructure.repositories.mongoengine.models.video_job_model import VideoJobModel
+
+        VideoJobModel._get_db = lambda: mongo_db['test_video_frame_extractor_microservice']
+        
+        VideoJobModel.objects.delete()
+    except Exception as e:
+        print(f"Error cleaning database: {e}")
+    
+    yield
+
+    try:
+        VideoJobModel.objects.delete()
+    except Exception as e:
+        print(f"Error cleaning database after test: {e}")

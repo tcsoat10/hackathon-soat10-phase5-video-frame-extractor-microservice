@@ -39,7 +39,7 @@ class VideoJobStatus(Enum):
         return {member.status: member.description for member in cls}
     
     def __str__(self) -> str:
-        return self.status
+        return self.status.upper()
     
     def __repr__(self) -> str:
         return self.status

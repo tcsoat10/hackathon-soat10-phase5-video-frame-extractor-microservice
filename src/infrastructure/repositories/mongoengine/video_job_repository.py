@@ -26,7 +26,6 @@ class MongoVideoJobRepository(IVideoJobRepository):
 
     def find_by_job_ref(self, job_ref: str) -> Optional[VideoJob]:
         model: VideoJobModel = VideoJobModel.objects(job_ref=job_ref).first()
-        print(model)
         return model.to_entity() if model else None
     
     def get_by_id(self, id: str) -> Optional[VideoJob]:

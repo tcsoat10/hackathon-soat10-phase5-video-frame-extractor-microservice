@@ -31,11 +31,7 @@ SERVER_PORT = int(os.getenv("APP_PORT", 5000))
 
 LOG_LEVEL = set_logging_level()
 
-MERCADO_PAGO_ACCESS_TOKEN = os.getenv("MERCADO_PAGO_ACCESS_TOKEN")
-MERCADO_PAGO_USER_ID = os.getenv('MERCADO_PAGO_USER_ID')
-MERCADO_PAGO_POS_ID = os.getenv('MERCADO_PAGO_POS_ID')
-
-WEBHOOK_URL = os.getenv('WEBHOOK_URL')
+ZIPPER_SERVICE_URL = os.getenv("ZIPPER_SERVICE_URL")
 
 STORAGE_BUCKET = os.getenv("NAME_BUCKET", "default-bucket")
 STORAGE_VIDEO_PATH = os.getenv("STORAGE_VIDEO_PATH", "default-path-video")
@@ -47,3 +43,4 @@ AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
 AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
 
 SQS_QUEUE_NAME = os.getenv('SQS_QUEUE_NAME', 'extract_frames_queue')
+

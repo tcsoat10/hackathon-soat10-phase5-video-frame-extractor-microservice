@@ -54,7 +54,7 @@ test_last_failed:
 	ENV=test ptw --runner 'pytest --ff --lf $(extra)'
 
 test_coverage:
-	coverage report --omit=tests/*
+	coverage report --omit='tests/*,src/config/*,src/config/**'
 
 celery_worker:
 	PYTHONPATH=. poetry run celery -A src.config.celery_app worker --loglevel=info

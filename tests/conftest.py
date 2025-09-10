@@ -12,7 +12,7 @@ from src.core.containers import Container
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
-    """Setup test environment"""
+    """Setup test environment"""    
     # Set test environment variables
     os.environ['MONGO_DB'] = 'test_video_frame_extractor_microservice'
     os.environ['MONGO_HOST'] = 'localhost'
@@ -29,7 +29,7 @@ def setup_test_environment():
     os.environ['CELERY_NOTIFICATION_RETRY_DELAY_SECONDS'] = '0'
 
     yield
-    # Cleanup after tests
+
     try:
         disconnect(alias='test')
         disconnect(alias='default')
@@ -52,13 +52,13 @@ def mongo_db():
         host='localhost',
         port=27017,
         mongo_client_class=mongomock.MongoClient,
-        alias='test'
+        alias='default'
     )
     
     yield mongomock.MongoClient('localhost', 27017)
 
     try:
-        disconnect(alias='test')
+        disconnect(alias='default')
     except Exception:
         pass
 
@@ -68,9 +68,8 @@ def client(mongo_db) -> Generator[TestClient, None, None]:
     """
     Cria um cliente de teste para a aplicação.
     """
-    # Mock the connect_db function to use test alias
-    with patch('config.database.connect_db') as mock_connect:
-        with patch('config.database.disconnect_db') as mock_disconnect:
+    with patch('src.config.database.connect_db') as mock_connect:
+        with patch('src.config.database.disconnect_db') as mock_disconnect:
             mock_connect.return_value = None
             mock_disconnect.return_value = None
             
@@ -85,11 +84,29 @@ def container(mongo_db) -> Generator[Container, None, None]:
     Cria um container de dependências para testes.
     """
     container = Container()
-    container.wire(modules=[])
+    container.wire(modules=[
+        "tests.src.infrastructure.repositories.mongoengine.test_video_job_repository",
+    ])
     yield container
     container.unwire()
 
+def get_headers():
+    return { "x-api-key": "test_api_key" }
 
 @pytest.fixture(autouse=True)
 def clean_database(mongo_db):
-    ...
+    try:
+        from src.infrastructure.repositories.mongoengine.models.video_job_model import VideoJobModel
+
+        VideoJobModel._get_db = lambda: mongo_db['test_video_frame_extractor_microservice']
+        
+        VideoJobModel.objects.delete()
+    except Exception as e:
+        print(f"Error cleaning database: {e}")
+    
+    yield
+
+    try:
+        VideoJobModel.objects.delete()
+    except Exception as e:
+        print(f"Error cleaning database after test: {e}")

@@ -43,6 +43,7 @@ pytest-watch = "^4.2.0"
 mongomock = "^4.1.2"
 moto = "^5.1.11"
 requests-mock = "^1.12.1"
+pytest-asyncio = "^1.1.0"
 
 
 [tool.poetry.group.dev.dependencies]

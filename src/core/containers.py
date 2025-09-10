@@ -25,8 +25,7 @@ class Container(containers.DeclarativeContainer):
         "src.core.application.use_cases.send_video_to_zipper_use_case",
         "src.infrastructure.gateways.s3_storage_gateway",
         "src.infrastructure.gateways.celery_task_queue_gateway",
-        "src.infrastructure.gateways.zipper_gateway",
-        "src.infrastructure.gateways.local_object_storage_gateway",
+        "src.infrastructure.gateways.zipper_gateway"
     ])
 
     identity_map = providers.Singleton(IdentityMap)

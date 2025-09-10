@@ -32,7 +32,7 @@ class ProcessVideoUseCase:
     def execute(self, dto: ProcessVideoTaskDTO):
         video_job = self._video_job_repository.find_by_job_ref(dto.job_ref)
         if not video_job:
-            raise EntityNotFoundException(f"VideoJob com job_ref {dto.job_ref} não encontrado.")
+            raise EntityNotFoundException(message=f"VideoJob com job_ref {dto.job_ref} não encontrado.")
         
         try:
             video_job.start_processing()
@@ -54,16 +54,13 @@ class ProcessVideoUseCase:
             video_job.complete()
             self._video_job_repository.save(video_job)
 
-            zip_task_data = {
+            return {
                 "job_ref": video_job.job_ref,
                 "client_identification": video_job.client_identification,
                 "bucket": video_job.bucket,
                 "frames_path": f"{video_job.frames_path}/{video_job.job_ref}",
                 "notify_url": video_job.notify_url,
             }
-            
-            # TODO: send info bucket to microservice zipper.
-            # self._task_gateway.enqueue_zip_frames_task(zip_task_data)
 
         except Exception as e:
             import traceback
@@ -73,6 +70,8 @@ class ProcessVideoUseCase:
             if video_job:
                 video_job.fail(error_message)
                 self._video_job_repository.save(video_job)
+
+            raise
 
     def _upload_frames_in_bulk(self, frame_paths: List[str], video_job: VideoJob):
         items_to_upload = []

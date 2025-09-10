@@ -1,4 +1,3 @@
-import os
 from src.config.settings import STORAGE_BUCKET, STORAGE_FRAMES_PATH, STORAGE_VIDEO_PATH
 from src.core.constants.video_job_status import VideoJobStatus
 from src.core.domain.dtos.video_frame_extractor.register_video_dto import RegisterVideoDTO

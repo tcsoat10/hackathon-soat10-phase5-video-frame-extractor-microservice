@@ -111,7 +111,7 @@ def run_migrations():
             traceback.print_exc()
             return False
 
-    print(f"\n🎉 Successfully applied {success_count} migrations!")
+    print(f"Successfully applied {success_count} migrations!")
     return True
 
 if __name__ == "__main__":
@@ -120,10 +120,10 @@ if __name__ == "__main__":
         if not success:
             sys.exit(1)
     except KeyboardInterrupt:
-        print("\n⚠️  Migration process interrupted by user.")
+        print("Migration process interrupted by user.")
         sys.exit(1)
     except Exception as e:
-        print(f"❌ Unexpected error during migration: {e}")
+        print(f"Unexpected error during migration: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

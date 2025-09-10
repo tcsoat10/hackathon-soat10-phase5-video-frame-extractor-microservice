@@ -8,6 +8,7 @@ from src.presentation.api.v1.middleware.api_key_middleware import ApiKeyMiddlewa
 from src.presentation.api.v1.middleware.custom_error_middleware import CustomErrorMiddleware
 from src.presentation.api.v1.middleware.identity_map_middleware import IdentityMapMiddleware
 from src.presentation.api.v1.routes.health_check import router as health_check_router
+from src.presentation.api.v1.routes.video_frame_extractor import router as video_frame_extractor_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,3 +44,4 @@ app.add_middleware(IdentityMapMiddleware)
 
 
 app.include_router(health_check_router, prefix="/api/v1")
+app.include_router(video_frame_extractor_router, prefix="/api/v1")

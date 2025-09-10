@@ -54,19 +54,22 @@ test_last_failed:
 	ENV=test ptw --runner 'pytest --ff --lf $(extra)'
 
 test_coverage:
-	coverage report --omit=tests/*
+	coverage report --omit='tests/*,src/config/*,src/config/**,*/dependency_injector/*'
+
+test_coverage_xml:
+	coverage xml --omit='tests/*,src/config/*,src/config/**,*/dependency_injector/*'
 
 celery_worker:
-	poetry run celery -A config.celery_config worker --loglevel=info --queues=notifications,default
+	PYTHONPATH=. poetry run celery -A src.config.celery_app worker --loglevel=info
 
 celery_beat:
-	poetry run celery -A config.celery_config beat --loglevel=info
+	PYTHONPATH=. poetry run celery -A src.config.celery_app beat --loglevel=info
 
 celery_flower:
-	poetry run celery -A config.celery_config flower --port=5555
+	PYTHONPATH=. poetry run celery -A src.config.celery_app flower --port=5555
 
 celery_flower_with_auth:
-	poetry run celery -A config.celery_config flower --port=5555 --basic_auth=admin:secret123
+	PYTHONPATH=. poetry run celery -A src.config.celery_app flower --port=5555 --basic_auth=admin:secret123
 
 flower_logs:
 	docker logs -f video-frame-extractor-microservice-celery-flower

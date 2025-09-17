@@ -38,7 +38,8 @@ class TestMongoVideoJobRepository:
         saved = self.video_job_repository.save(video_job)
 
         assert saved.id is not None
-        assert saved.job_ref == 'test_client-a9b8c7d6-e5f4-3210-9876-543210fedcba'
+        assert saved.client_identification == 'test_client'
+        assert saved.job_ref == 'a9b8c7d6-e5f4-3210-9876-543210fedcba'
         assert saved.video_path == "test_video_path"
         assert saved.frames_path == "test_frames_path"
         assert saved.notify_url == "test_notify_url"

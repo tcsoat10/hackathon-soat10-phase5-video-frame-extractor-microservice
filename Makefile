@@ -19,24 +19,24 @@ down:
 dev:
 	@echo "Starting MongoDB and Redis containers..."
 	@docker compose up -d video-frame-extractor-microservice-mongodb video-frame-extractor-microservice-redis \
-	celery-worker celery-beat celery-flower
+	celery-worker celery-beat
 	@echo "Waiting for services to be ready..."
 	@sleep 5
 	@echo "Starting Uvicorn..."
 	@trap 'docker compose down --remove-orphans' INT TERM EXIT; \
-	MONGO_HOST=localhost MONGO_PORT=27017 REDIS_HOST=localhost uvicorn src.app:app --reload --host 0.0.0.0 --port 8001
+	MONGO_HOST=localhost REDIS_HOST=localhost uvicorn src.app:app --reload --host 0.0.0.0 --port 8001
 
 dev_full:
 	@echo "Starting all services with Flower..."
 	@docker compose up -d
 	@echo "Aguardando todos os serviços iniciarem..."
-	@sleep 20
+	@sleep 10
 	@echo ""
-	@echo "Serviços disponíveis:"
-	@echo "- API: http://localhost:8001"
-	@echo "- Flower: http://localhost:5555"
-	@echo "- MongoDB: localhost:27017"
-	@echo "- Redis: localhost:6379"
+	@echo "Done."
+# 	@echo "- API: http://localhost:8001"
+# 	@echo "- Flower: http://localhost:5555"
+# 	@echo "- MongoDB: localhost:27017"
+# 	@echo "- Redis: localhost:6379"
 
 test_watch:
 	ENV=test ptw --runner 'pytest --ff $(extra)'

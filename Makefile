@@ -16,19 +16,13 @@ up_build:
 down:
 	docker compose down --remove-orphans
 
-migrate_db:
-	poetry run python ./src/config/init_db/run_migrations.py
-
 dev:
 	@echo "Starting MongoDB and Redis containers..."
 	@docker compose up -d video-frame-extractor-microservice-mongodb video-frame-extractor-microservice-redis \
 	celery-worker celery-beat celery-flower
 	@echo "Waiting for services to be ready..."
 	@sleep 5
-	@echo "Applying migrations..."
-	@MONGO_HOST=localhost MONGO_PORT=27017 REDIS_HOST=localhost ./src/config/init_db/init_db.sh
 	@echo "Starting Uvicorn..."
-	@echo "Flower disponível em: http://localhost:5555"
 	@trap 'docker compose down --remove-orphans' INT TERM EXIT; \
 	MONGO_HOST=localhost MONGO_PORT=27017 REDIS_HOST=localhost uvicorn src.app:app --reload --host 0.0.0.0 --port 8001
 

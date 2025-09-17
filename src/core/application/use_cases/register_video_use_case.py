@@ -44,7 +44,7 @@ class RegisterVideoUseCase:
         video_content = await dto.video_file.read()
         storage_item = StorageItem(
             bucket=STORAGE_BUCKET,
-            key=f"{STORAGE_VIDEO_PATH}/{saved_job.job_ref}",
+            key=f"{STORAGE_VIDEO_PATH}/{video_job.client_identification}/{video_job.job_ref}",
             content=video_content,
             content_type=dto.video_file.content_type
         )

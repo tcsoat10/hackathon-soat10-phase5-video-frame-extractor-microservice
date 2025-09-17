@@ -70,7 +70,7 @@ async def test_execute_register_video_use_case(
     )
 
     saved_job = Mock(spec=VideoJob)
-    saved_job.job_ref = "test_client-some-uuid"
+    saved_job.job_ref = "some-uuid"
     saved_job.client_identification = "test_client"
     saved_job.bucket = "test-bucket"
     saved_job.video_path = "videos"

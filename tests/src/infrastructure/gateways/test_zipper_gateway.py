@@ -3,6 +3,7 @@ import pytest
 import requests
 from src.infrastructure.gateways.zipper_gateway import ZipperServiceGateway
 
+@patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_X_API_KEY", "default-key")
 @patch("src.infrastructure.gateways.zipper_gateway.requests.post")
 def test_send_video_to_zipper_success(mock_post):
     gateway = ZipperServiceGateway()
@@ -15,7 +16,11 @@ def test_send_video_to_zipper_success(mock_post):
 
     result = gateway.send_video_to_zipper(video)
 
-    mock_post.assert_called_once_with("http://zipper/schedule", json=video)
+    mock_post.assert_called_once_with(
+        "http://zipper/zip/register",
+        json=video,
+        headers={"x-api-key": "default-key"}
+    )
     assert result == {"job_id": "job-1"}
 
 @patch("src.infrastructure.gateways.zipper_gateway.requests.post")
@@ -30,6 +35,7 @@ def test_send_video_to_zipper_failure_raises(mock_post):
     with pytest.raises(requests.exceptions.HTTPError):
         gateway.send_video_to_zipper(video)
 
+@patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_X_API_KEY", "default-key")
 @patch("src.infrastructure.gateways.zipper_gateway.requests.post")
 def test_send_video_logs_info_on_success(mock_post):
     gateway = ZipperServiceGateway()
@@ -43,11 +49,16 @@ def test_send_video_logs_info_on_success(mock_post):
 
     result = gateway.send_video_to_zipper(video)
 
-    mock_post.assert_called_once_with("http://zipper/schedule", json=video)
+    mock_post.assert_called_once_with(
+        "http://zipper/zip/register",
+        json=video,
+        headers={"x-api-key": "default-key"}
+    )
     gateway.logger.info.assert_called_once()
     assert "abc123" in gateway.logger.info.call_args[0][0]
     assert result == {"job_id": "job-1"}
 
+@patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_X_API_KEY", "default-key")
 @patch("src.infrastructure.gateways.zipper_gateway.requests.post")
 def test_send_video_logs_error_on_failure(mock_post):
     gateway = ZipperServiceGateway()
@@ -61,10 +72,15 @@ def test_send_video_logs_error_on_failure(mock_post):
     with pytest.raises(requests.exceptions.Timeout):
         gateway.send_video_to_zipper(video)
 
-    mock_post.assert_called_once_with("http://zipper/schedule", json=video)
+    mock_post.assert_called_once_with(
+        "http://zipper/zip/register",
+        json=video,
+        headers={"x-api-key": "default-key"}
+    )
     gateway.logger.error.assert_called_once()
     assert "Error sending video process result to Zipper Service" in gateway.logger.error.call_args[0][0]
 
+@patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_X_API_KEY", "default-key")
 @patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_URL", "http://default-zipper")
 @patch("src.infrastructure.gateways.zipper_gateway.requests.post")
 def test_send_video_uses_default_config_url(mock_post):
@@ -77,6 +93,9 @@ def test_send_video_uses_default_config_url(mock_post):
 
     result = gateway.send_video_to_zipper(video)
 
-    mock_post.assert_called_once_with("http://default-zipper/schedule", json=video)
+    mock_post.assert_called_once_with(
+        "http://default-zipper/zip/register",
+        json=video,
+        headers={"x-api-key": "default-key"}
+    )
     assert result == {"job_id": "job-cfg"}
-

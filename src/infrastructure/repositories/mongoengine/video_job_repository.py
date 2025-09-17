@@ -9,7 +9,7 @@ class MongoVideoJobRepository(IVideoJobRepository):
     def save(self, video_job: VideoJob) -> VideoJob:
         """Salva ou atualiza um VideoJob."""
         if not video_job.id:
-            video_job.job_ref = f"{video_job.client_identification}-{uuid4()}"
+            video_job.job_ref = f"{uuid4()}"
             model = VideoJobModel.from_entity(video_job)
         else:
             model = VideoJobModel.objects(id=video_job.id).first()

@@ -10,6 +10,6 @@ class RegisterVideoDTO(BaseModel):
     video_file: UploadFile = Field(..., description="Arquivo de vídeo para processamento")
     client_identification: str = Field(..., description="Identificação do cliente/usuário")
     notify_url: Optional[str] = Field(None, description="URL de callback para notificação")
-    # config: RegisterVideoConfigDTO
+    # config: Optional[RegisterVideoConfigDTO] = Field(None, description="Configurações adicionais do job")
         
 __all__ = ["RegisterVideoDTO"]

@@ -40,7 +40,7 @@ class ProcessVideoUseCase:
             
             video_bytes = self._storage_gateway.download_object(
                 bucket=video_job.bucket,
-                key=f"{video_job.video_path}/{video_job.job_ref}"
+                key=f"{video_job.video_path}/{video_job.client_identification}/{video_job.job_ref}"
             )
 
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -58,7 +58,7 @@ class ProcessVideoUseCase:
                 "job_ref": video_job.job_ref,
                 "client_identification": video_job.client_identification,
                 "bucket": video_job.bucket,
-                "frames_path": f"{video_job.frames_path}/{video_job.job_ref}",
+                "frames_path": f"{video_job.frames_path}/{video_job.client_identification}/{video_job.job_ref}",
                 "notify_url": video_job.notify_url,
             }
 
@@ -87,6 +87,6 @@ class ProcessVideoUseCase:
         self._storage_gateway.upload_objects_bulk(
             items=items_to_upload,
             bucket=video_job.bucket,
-            prefix=f"{video_job.frames_path}/{video_job.job_ref}",
+            prefix=f"{video_job.frames_path}/{video_job.client_identification}/{video_job.job_ref}",
             content_type='image/png'
         )

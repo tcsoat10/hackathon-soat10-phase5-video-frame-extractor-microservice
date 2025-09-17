@@ -32,8 +32,9 @@ SERVER_PORT = int(os.getenv("APP_PORT", 5000))
 LOG_LEVEL = set_logging_level()
 
 ZIPPER_SERVICE_URL = os.getenv("ZIPPER_SERVICE_URL")
+ZIPPER_SERVICE_X_API_KEY = os.getenv("ZIPPER_SERVICE_X_API_KEY")
 
-STORAGE_BUCKET = os.getenv("NAME_BUCKET", "default-bucket")
+STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "default-bucket")
 STORAGE_VIDEO_PATH = os.getenv("STORAGE_VIDEO_PATH", "default-path-video")
 STORAGE_FRAMES_PATH = os.getenv("STORAGE_FRAMES_PATH", "default-path-frames")
 

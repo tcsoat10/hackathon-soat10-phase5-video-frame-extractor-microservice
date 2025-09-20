@@ -33,10 +33,6 @@ dev_full:
 	@sleep 10
 	@echo ""
 	@echo "Done."
-# 	@echo "- API: http://localhost:8001"
-# 	@echo "- Flower: http://localhost:5555"
-# 	@echo "- MongoDB: localhost:27017"
-# 	@echo "- Redis: localhost:6379"
 
 test_watch:
 	ENV=test ptw --runner 'pytest --ff $(extra)'

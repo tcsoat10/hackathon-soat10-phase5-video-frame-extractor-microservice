@@ -45,4 +45,4 @@ def test_send_correct_payload_for_route_register_video(mock_enqueue_task, mock_u
     assert 'status' in response_json
     assert 'created_at' in response_json
     assert 'updated_at' in response_json
-    assert response_json['status'] == 'PENDING'
+    assert response_json['status'] == 'QUEUED'

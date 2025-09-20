@@ -60,6 +60,9 @@ class RegisterVideoUseCase:
             "config": saved_job.config,
         }
         self._task_gateway.enqueue_video_processing_task(task_data)
+        
+        saved_job.enqueue()
+        saved_job = self._video_job_repository.save(saved_job)
 
         return saved_job
 

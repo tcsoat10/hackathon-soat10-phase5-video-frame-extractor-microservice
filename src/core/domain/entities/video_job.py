@@ -39,8 +39,15 @@ class VideoJob(BaseEntity):
         self.config = config or {}
         self.error_message = error_message
 
+    def enqueue(self):
+        if self.status != VideoJobStatus.PENDING.status:
+            print(f"Warning: Job {self.job_ref} não está em estado PENDING.")
+            return
+        self.status = VideoJobStatus.QUEUED.status
+        self.updated_at = datetime.now()
+    
     def start_processing(self):
-        if self.status != VideoJobStatus.PENDING:
+        if self.status != VideoJobStatus.QUEUED.status:
             print(f"Warning: Job {self.job_ref} já foi iniciado.")
             return
         self.status = VideoJobStatus.PROCESSING.status

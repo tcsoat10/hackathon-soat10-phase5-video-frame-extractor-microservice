@@ -5,6 +5,7 @@ from src.core.ports.cloud.object_storage_gateway import ObjectStorageGateway
 from src.core.ports.repositories.i_video_job_repository import IVideoJobRepository
 from src.core.ports.tasks.i_task_queue_gateway import ITaskQueueGateway
 from src.presentation.api.v1.presenters.dto_presenter import DTOPresenter
+from src.core.application.use_cases.get_video_status import GetVideoStatusUseCase
 
 class VideoController:
     def __init__(
@@ -25,5 +26,12 @@ class VideoController:
         )
         video_job_entity = await register_video_use_case.execute(dto)
         return DTOPresenter.transform(video_job_entity, VideoJobDTO)
+
+    async def get_video_status(self, job_ref: str) -> VideoJobDTO:
+        get_video_status_use_case: GetVideoStatusUseCase = GetVideoStatusUseCase.build(
+            video_job_repository=self._video_job_repository
+        )
+        video_job_dto = await get_video_status_use_case.execute(job_ref)
+        return video_job_dto
 
 __all__ = ["VideoController"]

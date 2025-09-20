@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import ANY, Mock, AsyncMock, call
 
 from fastapi import UploadFile
 
@@ -81,7 +81,7 @@ async def test_execute_register_video_use_case(
 
     result_job = await register_video_use_case.execute(dto)
 
-    mock_video_job_repository.save.assert_called_once()
+    assert mock_video_job_repository.save.call_count == 2
     mock_storage_gateway.upload_object.assert_called_once()
     mock_task_gateway.enqueue_video_processing_task.assert_called_once()
 
@@ -108,6 +108,8 @@ async def test_execute_register_video_use_case_with_error(
 
     with pytest.raises(Exception, match="Database error"):
         await register_video_use_case.execute(dto)
+
+    assert mock_video_job_repository.save.call_count == 1
 
     mock_video_job_repository.save.assert_called_once()
     mock_storage_gateway.upload_object.assert_not_called()

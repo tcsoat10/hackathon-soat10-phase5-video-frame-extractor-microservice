@@ -15,5 +15,13 @@ class CeleryTaskQueueGateway(ITaskQueueGateway):
             queue='extract_frames_queue'
         )
         return task.id
+    
+    def notification_status_callback(self, task_data: Dict[str, Any]) -> str:
+        task = self._celery_app.send_task(
+            'src.infrastructure.tasks.notification_task.send_notification_task',
+            args=[task_data],
+            queue='notification_queue'
+        )
+        return task.id
 
 __all__ = ["CeleryTaskQueueGateway"]

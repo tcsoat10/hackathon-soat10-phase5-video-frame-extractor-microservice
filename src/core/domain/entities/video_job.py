@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Dict, Optional, Any
 
+from src.core.domain.dtos.callbacks.notification_dto import NotificationDTO
 from src.core.domain.entities.base_entity import BaseEntity
 from src.core.constants.video_job_status import VideoJobStatus
 
@@ -62,5 +63,14 @@ class VideoJob(BaseEntity):
         self.status = VideoJobStatus.ERROR.status
         self.error_message = reason
         self.updated_at = datetime.now()
+        
+    def build_notification(self, detail: str = None):
+        return NotificationDTO(
+            job_ref=self.job_ref,
+            status=self.status,
+            timestamp=datetime.now().isoformat(),
+            detail=detail,
+            service="frame_extractor"
+        )
 
 __all__ = ["VideoJob"]

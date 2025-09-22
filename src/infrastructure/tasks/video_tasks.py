@@ -23,7 +23,8 @@ def extract_frames_task(
     video_job_repository: IVideoJobRepository = Provide[Container.video_job_repository],
     storage_gateway: ObjectStorageGateway = Provide[Container.object_storage_gateway],
     ffmpeg_wrapper: FFmpegWrapper = Provide[Container.ffmpeg_wrapper],
-    zipper_gateway: IZipperGateway = Provide[Container.zipper_gateway]
+    zipper_gateway: IZipperGateway = Provide[Container.zipper_gateway],
+    notification_gateway = Provide[Container.notification_gateway],
 ):
     try:
         print(f"Iniciando task {self.request.id} com dados: {task_data}")
@@ -32,7 +33,8 @@ def extract_frames_task(
         process_video_use_case = ProcessVideoUseCase.build(
             video_job_repository=video_job_repository,
             storage_gateway=storage_gateway,
-            video_processor=ffmpeg_wrapper
+            video_processor=ffmpeg_wrapper,
+            notification_gateway=notification_gateway
         )
         video_process_result = process_video_use_case.execute(dto)
         

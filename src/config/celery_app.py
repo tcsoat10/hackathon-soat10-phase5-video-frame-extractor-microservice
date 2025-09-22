@@ -36,7 +36,10 @@ celery_app = Celery(
     'video_frame_extractor_microservice',
     broker=get_message_broker(),
     backend=get_redis_url(),
-    include=['src.infrastructure.tasks.video_tasks']
+    include=[
+        'src.infrastructure.tasks.video_tasks',
+        'src.infrastructure.tasks.notification_task',
+    ]
 )
 celery_app.config_from_object('src.config.celery_config')
 
@@ -48,4 +51,5 @@ def init_worker(**kwargs):
 
 celery_app.autodiscover_tasks([
     'src.infrastructure.tasks.video_tasks',
+    'src.infrastructure.tasks.notification_task',
 ])

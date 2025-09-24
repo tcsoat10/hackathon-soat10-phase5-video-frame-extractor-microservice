@@ -23,8 +23,8 @@ class ProcessVideoUseCase:
         self._video_processor = video_processor
         self._notification_gateway = notification_gateway
         
-    def _send_notification(self, video_job: VideoJob):
-        notification = video_job.build_notification()
+    def _send_notification(self, video_job: VideoJob, detail: str = None):
+        notification = video_job.build_notification(detail=detail)
         self._notification_gateway.send_notification(
             notify_url=video_job.notify_url,
             notification_dto=notification

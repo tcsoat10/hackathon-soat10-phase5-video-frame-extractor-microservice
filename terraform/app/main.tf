@@ -143,6 +143,22 @@ resource "kubernetes_deployment" "frames_app" {
             name  = "AWS_DEFAULT_REGION"
             value = "us-east-1"
           }
+          env {
+            name  = "STORAGE_BUCKET"
+            value = "video-frame-extractor-hackathon"
+          }
+          env {
+            name  = "STORAGE_VIDEO_PATH"
+            value = "video-bucket"
+          }
+          env {
+            name  = "STORAGE_FRAMES_PATH"
+            value = "frames-bucket"
+          }
+          env {
+            name  = "SQS_QUEUE_NAME"
+            value = "extract_frames_queue"
+          }
           port {
             container_port = 8080
           }

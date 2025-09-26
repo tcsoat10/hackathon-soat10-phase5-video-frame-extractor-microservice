@@ -149,3 +149,5 @@ scripts
 *terraform.tfstate
 *terraform-provider*
 *LICENSE.txt
+
+terraform.tfvars

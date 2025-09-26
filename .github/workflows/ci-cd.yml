@@ -167,6 +167,7 @@ jobs:
           db_username = "${{ secrets.DB_USERNAME }}"
           db_password = "${{ secrets.DB_PASSWORD }}"
           mongo_password = "${{ secrets.DB_PASSWORD }}"
+          mongo_root_password = "${{ secrets.DB_ROOT_PASSWORD }}"
           EOF
       
       - name: Terraform Plan (PR)

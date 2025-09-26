@@ -219,22 +219,22 @@ jobs:
         run: |
           cp terraform/mock/mock_eks_outputs.tfstate terraform/redis/
       
-      - name: Terraform Plan (PR)
-        if: github.event_name == 'pull_request'
+      - name: Select production workspace
+        if: github.ref == 'refs/heads/main'
         working-directory: ./terraform/redis
-        run: terraform plan || true
-      
+        run: terraform workspace new prod || terraform workspace select prod
+
       - name: Create tfvars file
         working-directory: ./terraform/db
         run: |
           cat <<EOF > secrets.auto.tfvars
           redis_password = "${{ secrets.REDIS_PASSWORD }}"          
           EOF
-
-      - name: Select production workspace
-        if: github.ref == 'refs/heads/main'
+      
+      - name: Terraform Plan (PR)
+        if: github.event_name == 'pull_request'
         working-directory: ./terraform/redis
-        run: terraform workspace new prod || terraform workspace select prod
+        run: terraform plan || true      
 
       - name: Terraform Plan (Main)
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'

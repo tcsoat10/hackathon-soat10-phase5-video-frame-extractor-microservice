@@ -4,17 +4,23 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from src.core.domain.dtos.video_frame_extractor.process_video_task_dto import ProcessVideoTaskDTO
 from src.core.exceptions.entity_not_found_exception import EntityNotFoundException
+from src.core.ports.gateways.callbacks.i_notification_gateway import INotificationGateway
 from tests.factories.video_job_factory import VideoJobFactory
 from src.core.application.use_cases.process_video_use_case import ProcessVideoUseCase
+
+@pytest.fixture
+def mock_notification_gateway():
+    return Mock(spec=INotificationGateway)
 
 @patch('src.infrastructure.repositories.mongoengine.video_job_repository.MongoVideoJobRepository')
 @patch('src.infrastructure.video.ffmpeg_wrapper.FFmpegWrapper')
 @patch('src.infrastructure.gateways.s3_storage_gateway.S3StorageGateway')
-def test_process_video_use_case_success(mock_storage_gateway, mock_ffmpeg_wrapper, mock_video_job_repository):
+def test_process_video_use_case_success(mock_storage_gateway, mock_ffmpeg_wrapper, mock_video_job_repository, mock_notification_gateway):
     mock_storage_gateway.download_object.return_value = b"video content"
     mock_storage_gateway.upload_objects_bulk.return_value = None
     mock_ffmpeg_wrapper.extract_frames.return_value = ["frame1.jpg", "frame2.jpg"]
-  
+    mock_notification_gateway.send_notification.return_value = None
+
     video_job = VideoJobFactory()
     mock_video_job_repository.find_by_job_ref.return_value = video_job.to_entity()
     
@@ -31,7 +37,8 @@ def test_process_video_use_case_success(mock_storage_gateway, mock_ffmpeg_wrappe
     use_case = ProcessVideoUseCase(
         video_job_repository=mock_video_job_repository,
         storage_gateway=mock_storage_gateway,
-        video_processor=mock_ffmpeg_wrapper
+        video_processor=mock_ffmpeg_wrapper,
+        notification_gateway=mock_notification_gateway
     )
     
     use_case._upload_frames_in_bulk = MagicMock()
@@ -46,8 +53,9 @@ def test_process_video_use_case_success(mock_storage_gateway, mock_ffmpeg_wrappe
 @patch('src.infrastructure.repositories.mongoengine.video_job_repository.MongoVideoJobRepository')
 @patch('src.infrastructure.video.ffmpeg_wrapper.FFmpegWrapper')
 @patch('src.infrastructure.gateways.s3_storage_gateway.S3StorageGateway')
-def test_process_video_use_case_video_job_not_found(mock_storage_gateway, mock_ffmpeg_wrapper, mock_video_job_repository):
+def test_process_video_use_case_video_job_not_found(mock_storage_gateway, mock_ffmpeg_wrapper, mock_video_job_repository, mock_notification_gateway):
     mock_video_job_repository.find_by_job_ref.return_value = None
+    mock_notification_gateway.send_notification.return_value = None
     
     dto = ProcessVideoTaskDTO(
         job_ref="nonexistent_job_ref",
@@ -62,7 +70,8 @@ def test_process_video_use_case_video_job_not_found(mock_storage_gateway, mock_f
     use_case = ProcessVideoUseCase(
         video_job_repository=mock_video_job_repository,
         storage_gateway=mock_storage_gateway,
-        video_processor=mock_ffmpeg_wrapper
+        video_processor=mock_ffmpeg_wrapper,
+        notification_gateway=mock_notification_gateway
     )
 
     try:
@@ -75,9 +84,10 @@ def test_process_video_use_case_video_job_not_found(mock_storage_gateway, mock_f
 @patch('src.infrastructure.repositories.mongoengine.video_job_repository.MongoVideoJobRepository')
 @patch('src.infrastructure.video.ffmpeg_wrapper.FFmpegWrapper')
 @patch('src.infrastructure.gateways.s3_storage_gateway.S3StorageGateway')
-def test_raise_error_when_download_object_fails(mock_storage_gateway, mock_ffmpeg_wrapper, mock_video_job_repository):
+def test_raise_error_when_download_object_fails(mock_storage_gateway, mock_ffmpeg_wrapper, mock_video_job_repository, mock_notification_gateway):
     video_job = VideoJobFactory()
     mock_video_job_repository.find_by_job_ref.return_value = video_job.to_entity()
+    mock_notification_gateway.send_notification.return_value = None
     
     dto = ProcessVideoTaskDTO(
         job_ref=video_job.job_ref,
@@ -92,7 +102,8 @@ def test_raise_error_when_download_object_fails(mock_storage_gateway, mock_ffmpe
     use_case = ProcessVideoUseCase(
         video_job_repository=mock_video_job_repository,
         storage_gateway=mock_storage_gateway,
-        video_processor=mock_ffmpeg_wrapper
+        video_processor=mock_ffmpeg_wrapper,
+        notification_gateway=mock_notification_gateway
     )
 
     mock_storage_gateway.download_object.side_effect = Exception("Download failed")
@@ -106,9 +117,10 @@ def test_raise_error_when_download_object_fails(mock_storage_gateway, mock_ffmpe
 @patch('src.infrastructure.repositories.mongoengine.video_job_repository.MongoVideoJobRepository')
 @patch('src.infrastructure.video.ffmpeg_wrapper.FFmpegWrapper')
 @patch('src.infrastructure.gateways.s3_storage_gateway.S3StorageGateway')
-def test_raise_error_when_upload_frames_in_bulk_fails(mock_storage_gateway, mock_ffmpeg_wrapper, mock_video_job_repository):
+def test_raise_error_when_upload_frames_in_bulk_fails(mock_storage_gateway, mock_ffmpeg_wrapper, mock_video_job_repository, mock_notification_gateway):
     video_job = VideoJobFactory()
     mock_video_job_repository.find_by_job_ref.return_value = video_job.to_entity()
+    mock_notification_gateway.send_notification.return_value = None
     
     dto = ProcessVideoTaskDTO(
         job_ref=video_job.job_ref,
@@ -123,7 +135,8 @@ def test_raise_error_when_upload_frames_in_bulk_fails(mock_storage_gateway, mock
     use_case = ProcessVideoUseCase(
         video_job_repository=mock_video_job_repository,
         storage_gateway=mock_storage_gateway,
-        video_processor=mock_ffmpeg_wrapper
+        video_processor=mock_ffmpeg_wrapper,
+        notification_gateway=mock_notification_gateway
     )
     
     mock_storage_gateway.download_object.return_value = b"video content"

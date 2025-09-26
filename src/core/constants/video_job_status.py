@@ -2,6 +2,7 @@ from enum import Enum
 
 class VideoJobStatus(Enum):
     PENDING = ("PENDING", "Waiting for processing")
+    QUEUED = ("QUEUED", "Queued for processing")
     PROCESSING = ("PROCESSING", "Processing in progress")
     COMPLETED = ("COMPLETED", "Processing completed")
     ERROR = ("ERROR", "An error occurred during processing")

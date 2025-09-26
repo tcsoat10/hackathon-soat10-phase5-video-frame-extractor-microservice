@@ -5,6 +5,7 @@ from typing import List
 from src.core.domain.dtos.video_frame_extractor.process_video_task_dto import ProcessVideoTaskDTO
 from src.core.domain.entities.video_job import VideoJob
 from src.core.exceptions.entity_not_found_exception import EntityNotFoundException
+from src.core.ports.gateways.callbacks.i_notification_gateway import INotificationGateway
 from src.core.ports.repositories.i_video_job_repository import IVideoJobRepository
 from src.core.ports.cloud.object_storage_gateway import ObjectStorageGateway
 from src.infrastructure.video.ffmpeg_wrapper import FFmpegWrapper
@@ -15,10 +16,19 @@ class ProcessVideoUseCase:
         video_job_repository: IVideoJobRepository,
         storage_gateway: ObjectStorageGateway,
         video_processor: FFmpegWrapper,
+        notification_gateway: INotificationGateway,
     ):
         self._video_job_repository = video_job_repository
         self._storage_gateway = storage_gateway
         self._video_processor = video_processor
+        self._notification_gateway = notification_gateway
+        
+    def _send_notification(self, video_job: VideoJob, detail: str = None):
+        notification = video_job.build_notification(detail=detail)
+        self._notification_gateway.send_notification(
+            notify_url=video_job.notify_url,
+            notification_dto=notification
+        )
 
     @classmethod
     def build(
@@ -26,8 +36,9 @@ class ProcessVideoUseCase:
         video_job_repository: IVideoJobRepository,
         storage_gateway: ObjectStorageGateway,
         video_processor: FFmpegWrapper,
+        notification_gateway: INotificationGateway,
     ) -> "ProcessVideoUseCase":
-        return cls(video_job_repository, storage_gateway, video_processor)
+        return cls(video_job_repository, storage_gateway, video_processor, notification_gateway)
 
     def execute(self, dto: ProcessVideoTaskDTO):
         video_job = self._video_job_repository.find_by_job_ref(dto.job_ref)
@@ -53,6 +64,8 @@ class ProcessVideoUseCase:
 
             video_job.complete()
             self._video_job_repository.save(video_job)
+            
+            self._send_notification(video_job)
 
             return {
                 "job_ref": video_job.job_ref,
@@ -70,6 +83,7 @@ class ProcessVideoUseCase:
             if video_job:
                 video_job.fail(error_message)
                 self._video_job_repository.save(video_job)
+                self._send_notification(video_job, detail=error_message)
 
             raise
 

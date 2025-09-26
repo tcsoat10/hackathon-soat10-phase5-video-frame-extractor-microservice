@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Dict, Optional, Any
 
+from src.core.domain.dtos.callbacks.notification_dto import NotificationDTO
 from src.core.domain.entities.base_entity import BaseEntity
 from src.core.constants.video_job_status import VideoJobStatus
 
@@ -39,8 +40,15 @@ class VideoJob(BaseEntity):
         self.config = config or {}
         self.error_message = error_message
 
+    def enqueue(self):
+        if self.status != VideoJobStatus.PENDING.status:
+            print(f"Warning: Job {self.job_ref} não está em estado PENDING.")
+            return
+        self.status = VideoJobStatus.QUEUED.status
+        self.updated_at = datetime.now()
+    
     def start_processing(self):
-        if self.status != VideoJobStatus.PENDING:
+        if self.status != VideoJobStatus.QUEUED.status:
             print(f"Warning: Job {self.job_ref} já foi iniciado.")
             return
         self.status = VideoJobStatus.PROCESSING.status
@@ -55,5 +63,14 @@ class VideoJob(BaseEntity):
         self.status = VideoJobStatus.ERROR.status
         self.error_message = reason
         self.updated_at = datetime.now()
+        
+    def build_notification(self, detail: str = None):
+        return NotificationDTO(
+            job_ref=self.job_ref,
+            status=self.status,
+            timestamp=datetime.now().isoformat(),
+            detail=detail,
+            service="frame_extractor"
+        )
 
 __all__ = ["VideoJob"]

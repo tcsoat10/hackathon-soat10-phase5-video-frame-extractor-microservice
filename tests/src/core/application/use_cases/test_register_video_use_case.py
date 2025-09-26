@@ -1,11 +1,12 @@
 import pytest
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import ANY, Mock, AsyncMock, call
 
 from fastapi import UploadFile
 
 from src.core.application.use_cases.register_video_use_case import RegisterVideoUseCase
 from src.core.domain.dtos.video_frame_extractor.register_video_dto import RegisterVideoDTO
 from src.core.domain.entities.video_job import VideoJob
+from src.core.ports.gateways.callbacks.i_notification_gateway import INotificationGateway
 from src.core.ports.repositories.i_video_job_repository import IVideoJobRepository
 from src.core.ports.cloud.object_storage_gateway import ObjectStorageGateway
 from src.core.ports.tasks.i_task_queue_gateway import ITaskQueueGateway
@@ -25,26 +26,35 @@ def mock_storage_gateway():
 def mock_task_gateway():
     return Mock(spec=ITaskQueueGateway)
 
+@pytest.fixture
+def mock_notification_gateway():
+    return Mock(spec=INotificationGateway)
+
 
 @pytest.fixture
 def register_video_use_case(
-    mock_video_job_repository, mock_storage_gateway, mock_task_gateway
+    mock_video_job_repository, mock_storage_gateway, mock_task_gateway, mock_notification_gateway
 ):
+    mock_notification_gateway.send_notification.return_value = None
     return RegisterVideoUseCase(
         video_job_repository=mock_video_job_repository,
         storage_gateway=mock_storage_gateway,
         task_gateway=mock_task_gateway,
+        notification_gateway=mock_notification_gateway,
     )
 
 def test_build_register_video_use_case(
     mock_video_job_repository,
     mock_storage_gateway,
     mock_task_gateway,
+    mock_notification_gateway
 ):
+    mock_notification_gateway.send_notification.return_value = None
     use_case = RegisterVideoUseCase.build(
         video_job_repository=mock_video_job_repository,
         storage_gateway=mock_storage_gateway,
         task_gateway=mock_task_gateway,
+        notification_gateway=mock_notification_gateway,
     )
 
     assert isinstance(use_case, RegisterVideoUseCase)
@@ -72,6 +82,7 @@ async def test_execute_register_video_use_case(
     saved_job = Mock(spec=VideoJob)
     saved_job.job_ref = "some-uuid"
     saved_job.client_identification = "test_client"
+    saved_job.status = "PENDING"
     saved_job.bucket = "test-bucket"
     saved_job.video_path = "videos"
     saved_job.frames_path = "frames"
@@ -81,7 +92,7 @@ async def test_execute_register_video_use_case(
 
     result_job = await register_video_use_case.execute(dto)
 
-    mock_video_job_repository.save.assert_called_once()
+    assert mock_video_job_repository.save.call_count == 2
     mock_storage_gateway.upload_object.assert_called_once()
     mock_task_gateway.enqueue_video_processing_task.assert_called_once()
 
@@ -93,7 +104,9 @@ async def test_execute_register_video_use_case_with_error(
     mock_video_job_repository,
     mock_storage_gateway,
     mock_task_gateway,
+    mock_notification_gateway
 ):
+    mock_notification_gateway.send_notification.return_value = None
     mock_file = AsyncMock(spec=UploadFile)
     mock_file.read.return_value = b"fake video content"
     mock_file.content_type = "video/mp4"
@@ -108,6 +121,8 @@ async def test_execute_register_video_use_case_with_error(
 
     with pytest.raises(Exception, match="Database error"):
         await register_video_use_case.execute(dto)
+
+    assert mock_video_job_repository.save.call_count == 1
 
     mock_video_job_repository.save.assert_called_once()
     mock_storage_gateway.upload_object.assert_not_called()

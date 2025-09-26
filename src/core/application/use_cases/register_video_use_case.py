@@ -3,6 +3,7 @@ from src.core.constants.video_job_status import VideoJobStatus
 from src.core.domain.dtos.video_frame_extractor.register_video_dto import RegisterVideoDTO
 from src.core.domain.entities.video_job import VideoJob
 from src.core.domain.entities.storage_item import StorageItem
+from src.core.ports.gateways.callbacks.i_notification_gateway import INotificationGateway
 from src.core.ports.repositories.i_video_job_repository import IVideoJobRepository
 from src.core.ports.cloud.object_storage_gateway import ObjectStorageGateway
 from src.core.ports.tasks.i_task_queue_gateway import ITaskQueueGateway
@@ -13,19 +14,30 @@ class RegisterVideoUseCase:
         video_job_repository: IVideoJobRepository,
         storage_gateway: ObjectStorageGateway,
         task_gateway: ITaskQueueGateway,
+        notification_gateway: INotificationGateway,
     ):
         self._video_job_repository = video_job_repository
         self._storage_gateway = storage_gateway
         self._task_gateway = task_gateway
-        
+        self._notification_gateway = notification_gateway
+
     @classmethod
     def build(
         cls,
         video_job_repository: IVideoJobRepository,
         storage_gateway: ObjectStorageGateway,
         task_gateway: ITaskQueueGateway,
+        notification_gateway: INotificationGateway,
     ) -> "RegisterVideoUseCase":
-        return cls(video_job_repository, storage_gateway, task_gateway)
+        return cls(video_job_repository, storage_gateway, task_gateway, notification_gateway)
+    
+    def _send_notification(self, video_job: VideoJob):
+        self._task_gateway.notification_status_callback(
+            {
+                "job_ref": video_job.job_ref,
+                "detail": VideoJobStatus.to_dict()[video_job.status],
+            },
+        )
 
     async def execute(self, dto: RegisterVideoDTO) -> VideoJob:
         video_job = VideoJob(
@@ -38,9 +50,11 @@ class RegisterVideoUseCase:
             notify_url=dto.notify_url,
             config={},
         )
-
         video_job.id=None
         saved_job = self._video_job_repository.save(video_job)
+        
+        self._send_notification(saved_job)
+
         video_content = await dto.video_file.read()
         storage_item = StorageItem(
             bucket=STORAGE_BUCKET,
@@ -60,6 +74,17 @@ class RegisterVideoUseCase:
             "config": saved_job.config,
         }
         self._task_gateway.enqueue_video_processing_task(task_data)
+        
+        saved_job.enqueue()
+        saved_job = self._video_job_repository.save(saved_job)
+        self._send_notification(saved_job)
+        
+        # self._task_gateway.notification_status_callback(
+        #     {
+        #         "job_ref": saved_job.job_ref,
+        #         "detail": "Video job registered and queued for processing."
+        #     },
+        # )
 
         return saved_job
 

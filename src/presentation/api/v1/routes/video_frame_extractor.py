@@ -20,3 +20,16 @@ async def register_video(
     controller: VideoController = Depends(Provide[Container.video_controller]),
 ):
     return await controller.register_video(dto)
+
+@router.get(
+    "/video/{job_ref}/status",
+    response_model=VideoJobDTO,
+    status_code=status.HTTP_200_OK,
+    summary="Obtém o status de um job de vídeo"
+)
+@inject
+async def get_video_status(
+    job_ref: str,
+    controller: VideoController = Depends(Provide[Container.video_controller]),
+):
+    return await controller.get_video_status(job_ref)

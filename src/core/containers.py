@@ -13,6 +13,7 @@ from src.core.ports.cloud.object_storage_gateway import ObjectStorageGateway
 from src.core.ports.tasks.i_task_queue_gateway import ITaskQueueGateway
 from src.infrastructure.video.ffmpeg_wrapper import FFmpegWrapper
 from src.presentation.api.v1.controllers.video_controller import VideoController
+from src.infrastructure.gateways.notification_gateway import NotificationGateway
 
 
 class Container(containers.DeclarativeContainer):    
@@ -25,7 +26,10 @@ class Container(containers.DeclarativeContainer):
         "src.core.application.use_cases.send_video_to_zipper_use_case",
         "src.infrastructure.gateways.s3_storage_gateway",
         "src.infrastructure.gateways.celery_task_queue_gateway",
-        "src.infrastructure.gateways.zipper_gateway"
+        "src.infrastructure.gateways.zipper_gateway",
+        "src.infrastructure.gateways.notification_gateway",
+        "src.infrastructure.repositories.mongoengine.video_job_repository",
+        "src.infrastructure.tasks.notification_task"
     ])
 
     identity_map = providers.Singleton(IdentityMap)
@@ -36,6 +40,9 @@ class Container(containers.DeclarativeContainer):
     object_storage_gateway: providers.Singleton[ObjectStorageGateway] = providers.Singleton(
         S3StorageGateway
     )
+
+    notification_gateway = providers.Factory(NotificationGateway)
+
     task_queue_gateway: providers.Singleton[ITaskQueueGateway] = providers.Singleton(
         CeleryTaskQueueGateway,
         celery_app=celery_app_provider
@@ -53,4 +60,5 @@ class Container(containers.DeclarativeContainer):
         video_job_repository=video_job_repository,
         storage_gateway=object_storage_gateway,
         task_gateway=task_queue_gateway,
+        notification_gateway=notification_gateway,
     )

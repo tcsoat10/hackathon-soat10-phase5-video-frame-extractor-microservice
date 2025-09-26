@@ -4,7 +4,7 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "soattc10-phase5-frames-app"
+    bucket = "soattc10-phase5-frames-service"
     key    = "application/terraform.tfstate"
     region = "us-east-1" # ajuste para sua região
   }

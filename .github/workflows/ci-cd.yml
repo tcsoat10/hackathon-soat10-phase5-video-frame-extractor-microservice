@@ -264,6 +264,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.REGION_DEFAULT }}
+          
 
       - name: Login to ECR
         run: |
@@ -306,7 +307,8 @@ jobs:
           aws_access_key_id = "${{ secrets.AWS_ACCESS_KEY_ID }}"
           aws_secret_access_key = "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
           aws_session_token = "${{ secrets.AWS_SESSION_TOKEN }}"
-          redis_password = "${{ secrets.REDIS_PASSWORD }}"          
+          redis_password = "${{ secrets.REDIS_PASSWORD }}"
+          aws_account_id = "${{ secrets.AWS_ACCOUNT_ID }}"
           EOF
 
       # Terraform Plan (PR)
@@ -376,6 +378,7 @@ jobs:
           mongo_password = "${{ secrets.DB_PASSWORD }}"
           zipper_api_key = "${{ secrets.ZIPPER_MICROSERVICE_X_API_KEY }}"
           frames_api_key = "${{ secrets.FRAMES_MICROSERVICE_X_API_KEY }}"
+          aws_account_id = "${{ secrets.AWS_ACCOUNT_ID }}"
           EOF
 
       # Terraform Plan (PR)

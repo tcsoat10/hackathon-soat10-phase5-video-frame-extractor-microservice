@@ -225,7 +225,7 @@ jobs:
         run: terraform workspace new prod || terraform workspace select prod
 
       - name: Create tfvars file
-        working-directory: ./terraform/db
+        working-directory: ./terraform/redis
         run: |
           cat <<EOF > secrets.auto.tfvars
           redis_password = "${{ secrets.REDIS_PASSWORD }}"          

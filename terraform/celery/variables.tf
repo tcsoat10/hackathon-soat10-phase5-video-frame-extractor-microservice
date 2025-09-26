@@ -26,7 +26,11 @@ variable "redis_password" {
 variable "application_image" {
   description = "Docker image for the application"
   type        = string
-  default     = "947665407822.dkr.ecr.us-east-1.amazonaws.com/soattc-frames-app:latest"
+  default     = ""
+}
+
+locals {
+  application_image = "${var.aws_account_id}.dkr.ecr.us-east-1.amazonaws.com/soattc-frames-app:latest"
 }
 
 # MongoDB Configuration
@@ -115,3 +119,4 @@ variable "sqs_queue_name"{
 variable "aws_secret_access_key" {}
 variable "aws_access_key_id" {}
 variable "aws_session_token" {}
+variable "aws_account_id" {}

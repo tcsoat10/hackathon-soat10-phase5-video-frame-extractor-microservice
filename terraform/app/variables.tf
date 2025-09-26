@@ -67,3 +67,15 @@ variable "aws_session_token" {
   description = "AWS Session Token"
   type        = string
 }
+
+variable "aws_account_id" {}
+
+variable "application_image" {
+  description = "Docker image for the application"
+  type        = string
+  default     = ""
+}
+
+locals {
+  application_image = "${var.aws_account_id}.dkr.ecr.us-east-1.amazonaws.com/soattc-frames-app:latest"
+}

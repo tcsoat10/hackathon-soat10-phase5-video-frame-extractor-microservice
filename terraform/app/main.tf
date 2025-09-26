@@ -4,7 +4,7 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "soattc10-phase5-frames-app"
+    bucket = "soattc10-phase5-frames-service"
     key    = "application/terraform.tfstate"
     region = "us-east-1" # ajuste para sua região
   }
@@ -62,7 +62,7 @@ resource "kubernetes_deployment" "frames_app" {
       spec {
         container {
           name  = "frames-app"
-          image = "947665407822.dkr.ecr.us-east-1.amazonaws.com/soattc-frames-app:latest"
+          image = local.application_image
           env{
             name = "MONGO_HOST"
             value = "mongodb"

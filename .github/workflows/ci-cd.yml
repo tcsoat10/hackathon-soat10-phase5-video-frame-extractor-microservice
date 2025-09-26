@@ -1,0 +1,396 @@
+name: Tech Challenger CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGION_DEFAULT: "us-east-1"
+  AWS_ECR_REGISTRY: "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com"
+  PROJECT_NAME: "soattc-frames-app"
+
+jobs:
+  build:
+    name: Build and Cache Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies
+        run: poetry install --with test --sync  
+
+  test:
+    name: Run Tests in Parallel
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.5
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Restore Cached Dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Run Tests in Parallel        
+        run: |
+          export ENV=test
+          poetry run pytest --cov=src --numprocesses auto --dist loadfile --max-worker-restart 0
+
+      - name: Generate Coverage Report        
+        run: |
+          poetry run coverage report --include="src/*" --omit="*/dependency_injector/*,tests/*"
+          poetry run coverage xml --include="src/*" --omit="*/dependency_injector/*,tests/*"
+
+      - name: Upload Coverage Report        
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 7 
+
+  run_sonarqube:
+
+    name: Build and analyze
+    if: false #SKIP
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository        
+        uses: actions/checkout@v4
+        with:
+          # O SonarQube precisa do histórico completo para análises mais precisas
+          fetch-depth: 0
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: . # Baixa o coverage.xml para a raiz do projeto
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.login="admin"
+            -Dsonar.projectKey=soattc-payment-app
+            -Dsonar.sources=src
+            -Dsonar.tests=tests
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+
+      - name: SonarQube Quality Gate check
+        uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  
+  deploy_db:
+    name: Deploy Database
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.REGION_DEFAULT }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ./terraform/db
+        run: terraform init
+
+      - name: Copy mocks if not in main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          cp terraform/mock/mock_eks_outputs.tfstate terraform/db/
+
+      - name: Create tfvars file
+        working-directory: ./terraform/db
+        run: |
+          cat <<EOF > secrets.auto.tfvars
+          db_username = "${{ secrets.DB_USERNAME }}"
+          db_password = "${{ secrets.DB_PASSWORD }}"
+          mongo_password = "${{ secrets.DB_PASSWORD }}"
+          mongo_root_password = "${{ secrets.DB_ROOT_PASSWORD }}"
+          EOF
+      
+      - name: Terraform Plan (PR)
+        if: github.event_name == 'pull_request'
+        working-directory: ./terraform/db
+        run: terraform plan || true      
+
+      - name: Select production workspace
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./terraform/db
+        run: terraform workspace new prod || terraform workspace select prod
+
+      - name: Terraform Plan (Main)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        working-directory: ./terraform/db
+        run: terraform plan
+
+      - name: Terraform Apply
+        working-directory: ./terraform/db
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
+
+  deploy_redis:
+    name: Deploy Redis
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.REGION_DEFAULT }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ./terraform/redis
+        run: terraform init
+
+      - name: Copy mocks if not in main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          cp terraform/mock/mock_eks_outputs.tfstate terraform/redis/
+      
+      - name: Select production workspace
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./terraform/redis
+        run: terraform workspace new prod || terraform workspace select prod
+
+      - name: Create tfvars file
+        working-directory: ./terraform/redis
+        run: |
+          cat <<EOF > secrets.auto.tfvars
+          redis_password = "${{ secrets.REDIS_PASSWORD }}"          
+          EOF
+      
+      - name: Terraform Plan (PR)
+        if: github.event_name == 'pull_request'
+        working-directory: ./terraform/redis
+        run: terraform plan || true      
+
+      - name: Terraform Plan (Main)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        working-directory: ./terraform/redis
+        run: terraform plan
+
+      - name: Terraform Apply
+        working-directory: ./terraform/redis
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
+
+  deploy_celery:
+    name: Deploy Celery    
+    needs: [deploy_db, deploy_redis]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.REGION_DEFAULT }}
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.REGION_DEFAULT }} | docker login --username AWS --password-stdin ${{ env.AWS_ECR_REGISTRY }}
+
+      - name: Build and Push Docker Image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: build-image
+        run: |
+          # Build and push Docker image
+          docker build --no-cache -t ${{ env.PROJECT_NAME }}:latest .
+          docker tag ${{ env.PROJECT_NAME }}:latest ${{ env.AWS_ECR_REGISTRY }}/${{ env.PROJECT_NAME }}:latest
+          docker push ${{ env.AWS_ECR_REGISTRY }}/${{ env.PROJECT_NAME }}:latest
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ./terraform/celery
+        run: terraform init
+
+      - name: Copy mocks if not in main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          cp terraform/mock/mock_mongo_outputs.tfstate terraform/celery/
+          cp terraform/mock/mock_eks_outputs.tfstate terraform/celery/
+          cp terraform/mock/mock_redis_outputs.tfstate terraform/celery/
+      
+      - name: Select production workspace
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./terraform/celery
+        run: terraform workspace new prod || terraform workspace select prod
+      
+      - name: Create tfvars file
+        working-directory: ./terraform/celery
+        run: |
+          cat <<EOF > secrets.auto.tfvars
+          aws_access_key_id = "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          aws_secret_access_key = "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          aws_session_token = "${{ secrets.AWS_SESSION_TOKEN }}"
+          redis_password = "${{ secrets.REDIS_PASSWORD }}"          
+          EOF
+
+      # Terraform Plan (PR)
+      - name: Terraform Plan
+        working-directory: ./terraform/celery
+        run: terraform plan || true
+        if: github.ref != 'refs/heads/main'
+
+      # Terraform Plan (Main)
+      - name: Terraform Plan
+        working-directory: ./terraform/celery
+        run: terraform plan
+        if: github.ref == 'refs/heads/main'
+
+      - name: Terraform Apply
+        working-directory: ./terraform/celery
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
+  
+  deploy_app:
+    name: Deploy App    
+    needs: [deploy_celery]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.REGION_DEFAULT }}      
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ./terraform/app
+        run: terraform init
+
+      - name: Copy mocks if not in main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          cp terraform/mock/mock_mongo_outputs.tfstate terraform/app/
+          cp terraform/mock/mock_eks_outputs.tfstate terraform/app/
+          cp terraform/mock/mock_redis_outputs.tfstate terraform/app/
+          cp terraform/mock/mock_celery_outputs.tfstate terraform/app/
+      
+      - name: Select production workspace
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./terraform/app
+        run: terraform workspace new prod || terraform workspace select prod
+      
+      - name: Create tfvars file
+        working-directory: ./terraform/app
+        run: |
+          cat <<EOF > secrets.auto.tfvars
+          aws_access_key_id = "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          aws_secret_access_key = "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          aws_session_token = "${{ secrets.AWS_SESSION_TOKEN }}"
+          mongo_user = "${{ secrets.DB_USER }}"
+          mongo_password = "${{ secrets.DB_PASSWORD }}"
+          zipper_api_key = "${{ secrets.ZIPPER_MICROSERVICE_X_API_KEY }}"
+          frames_api_key = "${{ secrets.FRAMES_MICROSERVICE_X_API_KEY }}"
+          EOF
+
+      # Terraform Plan (PR)
+      - name: Terraform Plan
+        working-directory: ./terraform/app
+        run: terraform plan || true
+        if: github.ref != 'refs/heads/main'
+
+      # Terraform Plan (Main)
+      - name: Terraform Plan
+        working-directory: ./terraform/app
+        run: terraform plan
+        if: github.ref == 'refs/heads/main'
+
+      - name: Terraform Apply
+        working-directory: ./terraform/app
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve

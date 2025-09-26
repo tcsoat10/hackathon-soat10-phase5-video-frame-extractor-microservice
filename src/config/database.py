@@ -15,9 +15,10 @@ class MongoDBConfig:
         mongo_user = os.getenv('MONGO_USER', '')
         mongo_password = os.getenv('MONGO_PASSWORD', '')
         auth_source = os.getenv('AUTH_SOURCE', 'admin')
+        mongo_container = os.getenv('MONGO_CONTAINER_NAME', 'video-frame-extractor-microservice-mongodb')
 
         if mongo_user and mongo_password:
-            connection_string = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/{mongodb_name}?authSource={auth_source}"
+            connection_string = f"mongodb://{mongo_user}:{mongo_password}@{mongo_container}:{mongo_port}/{mongodb_name}?authSource={mongodb_name}"
         else:
             connection_string = f"mongodb://{mongo_host}:{mongo_port}"
 

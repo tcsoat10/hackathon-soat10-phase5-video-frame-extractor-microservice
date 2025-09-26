@@ -25,6 +25,7 @@ services:
       - MONGO_PORT=27017
       - REDIS_HOST=video-frame-extractor-microservice-redis
       - REDIS_PORT=6379
+
     ports:
       - "${APP_PORT}:${APP_PORT}"
     restart: always
@@ -56,6 +57,7 @@ services:
       - MONGO_PORT=27017
       - REDIS_HOST=video-frame-extractor-microservice-redis
       - REDIS_PORT=6379
+      
     command: poetry run celery -A src.config.celery_app.celery_app worker --loglevel=INFO
     restart: always
 
@@ -80,6 +82,7 @@ services:
       - MONGO_PORT=27017
       - REDIS_HOST=video-frame-extractor-microservice-redis
       - REDIS_PORT=6379
+      
     command: poetry run celery -A src.config.celery_app.celery_app beat --loglevel=INFO
     restart: always
 

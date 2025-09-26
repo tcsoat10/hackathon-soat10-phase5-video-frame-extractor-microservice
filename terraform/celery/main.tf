@@ -47,7 +47,7 @@ resource "kubernetes_deployment" "frames_celery_worker" {
       spec {
         container {
           name  = "frames-celery-worker"
-          image = var.application_image
+          image = local.application_image
           command = ["celery", "-A", "src.config.celery_app", "worker", "--loglevel=info", "--concurrency=${var.celery_worker_concurrency}"]          
           
           # Variáveis de ambiente do Celery
@@ -165,7 +165,7 @@ resource "kubernetes_deployment" "frames_celery_beat" {
       spec {
         container {
           name  = "frames-celery-beat"
-          image = var.application_image
+          image = local.application_image
           command = ["celery", "-A", "src.config.celery_app", "beat", "--loglevel=info"]
           
           # Variáveis de ambiente do Celery

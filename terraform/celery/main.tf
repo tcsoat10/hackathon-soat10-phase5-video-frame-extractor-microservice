@@ -90,6 +90,10 @@ resource "kubernetes_deployment" "frames_celery_worker" {
             value = var.aws_secret_access_key
           }
           env {
+            name  = "AWS_SESSION_TOKEN"
+            value = var.aws_session_token
+          }
+          env {
             name  = "AWS_DEFAULT_REGION"
             value = "us-east-1"
           }
@@ -108,6 +112,18 @@ resource "kubernetes_deployment" "frames_celery_worker" {
           env {
             name  = "REDIS_PORT"
             value = data.terraform_remote_state.redis.outputs.redis_port
+          }
+          env {
+            name  = "REDIS_PASSWORD"
+            value = var.redis_password
+          }
+          env {
+            name  = "ZIPPER_SERVICE_URL"
+            value = "http://${data.terraform_remote_state.zipper.outputs.zipper_app_lb_endpoint}"
+          }
+          env {
+            name  = "ZIPPER_SERVICE_X_API_KEY"
+            value = var.zipper_api_key
           }
 
           

@@ -33,7 +33,7 @@ def test_send_correct_payload_for_route_register_video(mock_enqueue_task, mock_u
     
     response = client.post(
         "/api/v1/video/register",
-        params={"client_identification": "test_client"},
+        params={"client_identification": "test_client", "notify_url": "http://callback.url"},
         files={"video_file": ("test_video.mp4", b"fake video content", "video/mp4")},
         headers=get_headers()
     )

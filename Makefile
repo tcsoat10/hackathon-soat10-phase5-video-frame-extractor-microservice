@@ -18,7 +18,7 @@ down:
 
 dev:
 	@echo "Starting MongoDB and Redis containers..."
-	@docker compose up -d video-frame-extractor-microservice-mongodb video-frame-extractor-microservice-redis \
+	@docker compose up -d --build video-frame-extractor-microservice-mongodb video-frame-extractor-microservice-redis \
 	celery-worker celery-beat
 	@echo "Waiting for services to be ready..."
 	@sleep 5
@@ -28,7 +28,7 @@ dev:
 
 dev_full:
 	@echo "Starting all services with Flower..."
-	@docker compose up -d
+	@docker compose up -d --build
 	@echo "Aguardando todos os serviços iniciarem..."
 	@sleep 10
 	@echo ""

@@ -309,6 +309,7 @@ jobs:
           aws_session_token = "${{ secrets.AWS_SESSION_TOKEN }}"
           redis_password = "${{ secrets.REDIS_PASSWORD }}"
           aws_account_id = "${{ secrets.AWS_ACCOUNT_ID }}"
+          zipper_api_key = "${{ secrets.ZIPPER_MICROSERVICE_X_API_KEY }}"
           EOF
 
       # Terraform Plan (PR)

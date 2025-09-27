@@ -50,7 +50,7 @@ variable "mongo_port" {
   default = "27017"
 }
 
-
+variable "zipper_api_key" {}
 variable "frames_api_key" {}
 
 variable "aws_access_key_id" {

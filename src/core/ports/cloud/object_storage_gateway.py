@@ -11,6 +11,11 @@ class ObjectStorageGateway(ABC):
     def upload_object(self, item: StorageItem) -> StorageObject:
         """Upload to bucket -> recebe um `StorageItem` e retorna um `StorageObject`"""
         pass
+    
+    @abstractmethod
+    def upload_file_obj(self, item: StorageItem) -> StorageObject:
+        """Upload de um arquivo já aberto (file-like object)"""
+        pass
 
     @abstractmethod
     def download_object(self, bucket: str, key: str) -> bytes:

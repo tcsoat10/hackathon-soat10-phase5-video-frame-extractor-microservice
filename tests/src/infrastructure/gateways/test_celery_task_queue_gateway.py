@@ -30,7 +30,6 @@ def test_enqueue_video_processing_task(gateway, mock_celery_app):
 
     mock_celery_app.send_task.assert_called_once_with(
         'src.infrastructure.tasks.video_tasks.extract_frames_task',
-        args=[task_data],
-        queue='extract_frames_queue'
+        args=[task_data]
     )
     assert task_id == "some-task-id"

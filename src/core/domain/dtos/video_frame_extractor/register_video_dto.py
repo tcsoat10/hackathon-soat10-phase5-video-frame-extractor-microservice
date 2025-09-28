@@ -15,5 +15,16 @@ class RegisterVideoDTO(BaseModel):
         if value is not None and not value.startswith(('http://', 'https://')):
             raise ValueError('notify_url must be a valid URL starting with http:// or https://')
         return value
+
+    @field_validator('video_file')
+    @classmethod
+    def validate_client_identification(cls, value):
+        if value.content_type not in ['video/mp4', 'video/avi', 'video/mov', 'video/mkv']:
+            raise ValueError('Unsupported video format. Supported formats: mp4, avi, mov, mkv')
+
+        if value.spool_max_size > 210 * 1024 * 1024:  # 210MB
+            raise ValueError('Video file size exceeds the maximum limit of 200MB')
         
+        return value
+
 __all__ = ["RegisterVideoDTO"]

@@ -49,3 +49,5 @@ if ENVIRONMENT == 'development':
     SQS_QUEUE_NAME = f"{SQS_QUEUE_NAME}-dev"
 elif ENVIRONMENT == 'production':
     SQS_QUEUE_NAME = f"{SQS_QUEUE_NAME}-prod"
+
+FRAMES_PER_SECOND = os.getenv('FRAMES_PER_SECOND', '1')

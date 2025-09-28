@@ -2,6 +2,8 @@ import ffmpeg
 import os
 from typing import List
 
+from src.config.settings import FRAMES_PER_SECOND
+
 class FFmpegWrapper:
     def extract_frames(self, video_path: str, output_dir: str) -> List[str]:
         """
@@ -14,7 +16,7 @@ class FFmpegWrapper:
             (
                 ffmpeg
                 .input(video_path)
-                .filter('fps', fps='1')
+                .filter('fps', fps=FRAMES_PER_SECOND)
                 .output(os.path.join(output_dir, 'frame_%04d.png'), start_number=0)
                 .run(capture_stdout=True, capture_stderr=True, quiet=True)
             )

@@ -125,6 +125,26 @@ resource "kubernetes_deployment" "frames_celery_worker" {
             name  = "ZIPPER_SERVICE_X_API_KEY"
             value = var.zipper_api_key
           }
+          env {
+            name  = "CELERY_TASK_TIME_LIMIT"
+            value = "1800"
+          }
+          env {
+            name  = "CELERY_TASK_SOFT_TIME_LIMIT"
+            value = "1500"
+          }
+          env {
+            name  = "CELERY_WORKER_PREFETCH_MULTIPLIER"
+            value = "1"
+          }
+          env {
+            name  = "CELERY_WORKER_MAX_TASKS_PER_CHILD"
+            value = "1000"
+          }
+          env {
+            name  = "CELERY_TASK_ACKS_LATE"
+            value = "true"
+          }
 
           
           resources {
@@ -143,10 +163,10 @@ resource "kubernetes_deployment" "frames_celery_worker" {
             exec {
               command = ["celery", "-A", "src.config.celery_app", "inspect", "ping"]
             }
-            initial_delay_seconds = 60
-            period_seconds        = 30
-            timeout_seconds       = 10
-            failure_threshold     = 3
+            initial_delay_seconds = 120
+            period_seconds        = 60
+            timeout_seconds       = 30
+            failure_threshold     = 5
           }
         }
       }

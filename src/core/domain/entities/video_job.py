@@ -63,6 +63,7 @@ class VideoJob(BaseEntity):
         self.status = VideoJobStatus.ERROR.status
         self.error_message = reason
         self.updated_at = datetime.now()
+        self.inactivated_at = datetime.now()
         
     def build_notification(self, detail: str = None):
         return NotificationDTO(

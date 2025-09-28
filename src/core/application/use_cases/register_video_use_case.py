@@ -39,53 +39,61 @@ class RegisterVideoUseCase:
             },
         )
 
-    async def execute(self, dto: RegisterVideoDTO) -> VideoJob:
-        video_job = VideoJob(
-            job_ref='',
-            client_identification=dto.client_identification,
-            status=VideoJobStatus.PENDING.status,
-            bucket=STORAGE_BUCKET,
-            video_path=STORAGE_VIDEO_PATH,
-            frames_path=STORAGE_FRAMES_PATH,
-            notify_url=dto.notify_url,
-            config={},
-        )
-        video_job.id=None
-        saved_job = self._video_job_repository.save(video_job)
-        
-        self._send_notification(saved_job)
+    async def execute(self, dto: RegisterVideoDTO, job_ref: str = '') -> VideoJob:
+        try:
+            video_job = self._video_job_repository.find_by_job_ref(job_ref)
+            if video_job:
+                video_job.reactivate()
+                video_job.status = VideoJobStatus.PENDING.status
+                video_job.error_message = None
+            else:
+                video_job = VideoJob(
+                    job_ref=job_ref,
+                    client_identification=dto.client_identification,
+                    status=VideoJobStatus.PENDING.status,
+                    bucket=STORAGE_BUCKET,
+                    video_path=STORAGE_VIDEO_PATH,
+                    frames_path=STORAGE_FRAMES_PATH,
+                    notify_url=dto.notify_url,
+                    config={},
+                )
+                video_job.id=None
+            saved_job = self._video_job_repository.save(video_job)
 
-        video_content = await dto.video_file.read()
-        storage_item = StorageItem(
-            bucket=STORAGE_BUCKET,
-            key=f"{STORAGE_VIDEO_PATH}/{video_job.client_identification}/{video_job.job_ref}",
-            content=video_content,
-            content_type=dto.video_file.content_type
-        )
-        self._storage_gateway.upload_object(storage_item)
+            self._send_notification(saved_job)
+            storage_item = StorageItem(
+                bucket=STORAGE_BUCKET,
+                key=f"{STORAGE_VIDEO_PATH}/{video_job.client_identification}/{video_job.job_ref}",
+                file_object=dto.video_file.file,
+                content_type=dto.video_file.content_type
+            )
+            self._storage_gateway.upload_file_obj(storage_item)
 
-        task_data = {
-            "job_ref": saved_job.job_ref,
-            "client_identification": saved_job.client_identification,
-            "bucket": saved_job.bucket,
-            "video_path": saved_job.video_path,
-            "frames_path": saved_job.frames_path,
-            "notify_url": saved_job.notify_url,
-            "config": saved_job.config,
-        }
-        self._task_gateway.enqueue_video_processing_task(task_data)
-        
-        saved_job.enqueue()
-        saved_job = self._video_job_repository.save(saved_job)
-        self._send_notification(saved_job)
-        
-        # self._task_gateway.notification_status_callback(
-        #     {
-        #         "job_ref": saved_job.job_ref,
-        #         "detail": "Video job registered and queued for processing."
-        #     },
-        # )
+            task_data = {
+                "job_ref": saved_job.job_ref,
+                "client_identification": saved_job.client_identification,
+                "bucket": saved_job.bucket,
+                "video_path": saved_job.video_path,
+                "frames_path": saved_job.frames_path,
+                "notify_url": saved_job.notify_url,
+                "config": saved_job.config,
+            }
+            self._task_gateway.enqueue_video_processing_task(task_data)
+            
+            saved_job.enqueue()
+            saved_job = self._video_job_repository.save(saved_job)
+            self._send_notification(saved_job)
 
-        return saved_job
+            return saved_job
+        except Exception as e:
+            if video_job:
+                video_job.fail(str(e))
+                video_job = self._video_job_repository.save(video_job)
+                self._storage_gateway.delete_object(
+                    bucket=STORAGE_BUCKET,
+                    key=f"{STORAGE_VIDEO_PATH}/{video_job.client_identification}/{video_job.job_ref}"
+                )
+                self._send_notification(video_job)
+
 
 __all__ = ["RegisterVideoUseCase"]

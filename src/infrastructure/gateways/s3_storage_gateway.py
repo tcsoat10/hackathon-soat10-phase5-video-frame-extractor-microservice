@@ -5,6 +5,7 @@ import logging
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from src.config.settings import LOG_LEVEL, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_DEFAULT_REGION
 from src.core.ports.cloud.object_storage_gateway import ObjectStorageGateway
@@ -70,7 +71,11 @@ class S3StorageGateway(ObjectStorageGateway):
             self.logger.addHandler(LoggingMonitoringHandler(url=storage_config.monitoring_url))
 
 
-
+    @retry(
+        stop=stop_after_attempt(10),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(ClientError)
+    )
     def upload_object(self, item: StorageItem) -> StorageObject:
         """Upload a single StorageItem to S3 and return a StorageObject pointing to it."""
         try:
@@ -100,6 +105,36 @@ class S3StorageGateway(ObjectStorageGateway):
             self.logger.error("Failed to upload object %s/%s: %s - %s", item.bucket, item.key, aws_err.get("Code"), err_message)
             raise
 
+    @retry(
+        stop=stop_after_attempt(10),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(ClientError)
+    )
+    def upload_file_obj(self, item: StorageItem) -> StorageObject:
+        """Upload a file-like object to S3 and return a StorageObject pointing to it."""
+        if not item.file_object:
+            raise ValueError("StorageItem must contain a file_object for upload_file_obj method.")
+
+        try:
+            extra_args = {}
+            if item.content_type:
+                extra_args['ContentType'] = item.content_type
+        
+            self._client.upload_fileobj(Fileobj=item.file_object, Bucket=item.bucket, Key=item.key, ExtraArgs=extra_args)
+            url = self.presign_url(item.bucket, item.key)
+            self.logger.info("Uploaded file-like object %s/%s", item.bucket, item.key)
+            return StorageObject(bucket=item.bucket, key=item.key, url=url)
+        except ClientError as exc:
+            aws_err = getattr(exc, "response", {}).get("Error", {})
+            err_message = aws_err.get("Message") or str(exc)
+            self.logger.error("Failed to upload file-like object %s/%s: %s - %s", item.bucket, item.key, aws_err.get("Code"), err_message)
+            raise
+
+    @retry(
+        stop=stop_after_attempt(10),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(ClientError)
+    )
     def download_object(self, bucket: str, key: str) -> bytes:
         """Download an object from S3 and return its content as bytes."""
         try:
@@ -156,7 +191,11 @@ class S3StorageGateway(ObjectStorageGateway):
             self.logger.error("Failed to list objects in bucket %s with prefix %s: %s", bucket, prefix, exc)
             raise
             
-
+    @retry(
+        stop=stop_after_attempt(10),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(ClientError)
+    )
     def delete_object(self, bucket: str, key: str) -> bool:
         try:
             self._client.delete_object(Bucket=bucket, Key=key)

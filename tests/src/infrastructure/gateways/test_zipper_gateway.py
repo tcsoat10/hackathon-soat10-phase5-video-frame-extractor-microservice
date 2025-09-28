@@ -1,6 +1,7 @@
 from unittest.mock import Mock, patch
 import pytest
 import requests
+import tenacity
 from src.infrastructure.gateways.zipper_gateway import ZipperServiceGateway
 
 @patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_X_API_KEY", "default-key")
@@ -23,8 +24,10 @@ def test_send_video_to_zipper_success(mock_post):
     )
     assert result == {"job_id": "job-1"}
 
+@patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_X_API_KEY", "default-key")
 @patch("src.infrastructure.gateways.zipper_gateway.requests.post")
-def test_send_video_to_zipper_failure_raises(mock_post):
+@patch("time.sleep", return_value=None)
+def test_send_video_to_zipper_failure_raises(mock_sleep, mock_post):
     gateway = ZipperServiceGateway()
     gateway.zipper_service_url = "http://zipper"
     video = {"job_ref": "fail-me"}
@@ -32,8 +35,19 @@ def test_send_video_to_zipper_failure_raises(mock_post):
     mock_response = mock_post.return_value
     mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("bad")
 
-    with pytest.raises(requests.exceptions.HTTPError):
+    with pytest.raises(tenacity.RetryError) as exc_info:
         gateway.send_video_to_zipper(video)
+
+    assert mock_post.call_count == 10
+    mock_post.assert_called_with(
+        "http://zipper/zip/register",
+        json=video,
+        headers={"x-api-key": "default-key"}
+    )
+
+    assert mock_sleep.called
+    last_exc = exc_info.value.last_attempt.exception()
+    assert isinstance(last_exc, requests.exceptions.HTTPError)
 
 @patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_X_API_KEY", "default-key")
 @patch("src.infrastructure.gateways.zipper_gateway.requests.post")
@@ -60,7 +74,8 @@ def test_send_video_logs_info_on_success(mock_post):
 
 @patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_X_API_KEY", "default-key")
 @patch("src.infrastructure.gateways.zipper_gateway.requests.post")
-def test_send_video_logs_error_on_failure(mock_post):
+@patch("time.sleep", return_value=None)
+def test_send_video_logs_error_on_failure(mock_sleep, mock_post):
     gateway = ZipperServiceGateway()
     gateway.zipper_service_url = "http://zipper"
     gateway.logger = Mock()
@@ -69,16 +84,21 @@ def test_send_video_logs_error_on_failure(mock_post):
     mock_response = mock_post.return_value
     mock_response.raise_for_status.side_effect = requests.exceptions.Timeout("timeout")
 
-    with pytest.raises(requests.exceptions.Timeout):
+    with pytest.raises((requests.exceptions.Timeout, tenacity.RetryError)):
         gateway.send_video_to_zipper(video)
 
-    mock_post.assert_called_once_with(
+    assert mock_post.call_count == 10
+    mock_post.assert_called_with(
         "http://zipper/zip/register",
         json=video,
         headers={"x-api-key": "default-key"}
     )
-    gateway.logger.error.assert_called_once()
-    assert "Error sending video process result to Zipper Service" in gateway.logger.error.call_args[0][0]
+
+    assert gateway.logger.error.call_count == 10
+    gateway.logger.error.assert_called_with(
+        f"Error sending video process result to Zipper Service: {mock_response.raise_for_status.side_effect}"
+    )
+    assert "Error sending video process result to Zipper Service: timeout" in gateway.logger.error.call_args[0][0]
 
 @patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_X_API_KEY", "default-key")
 @patch("src.infrastructure.gateways.zipper_gateway.ZIPPER_SERVICE_URL", "http://default-zipper")

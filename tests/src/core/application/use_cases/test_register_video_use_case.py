@@ -71,6 +71,7 @@ async def test_execute_register_video_use_case(
 ):
     mock_file = AsyncMock(spec=UploadFile)
     mock_file.read.return_value = b"fake video content"
+    mock_file.file = Mock()
     mock_file.content_type = "video/mp4"
 
     dto = RegisterVideoDTO(
@@ -80,7 +81,7 @@ async def test_execute_register_video_use_case(
     )
 
     saved_job = Mock(spec=VideoJob)
-    saved_job.job_ref = "some-uuid"
+    saved_job.job_ref = "a8eft6ae-7f4e-4d3b-9c1d-1234567890ab"
     saved_job.client_identification = "test_client"
     saved_job.status = "PENDING"
     saved_job.bucket = "test-bucket"
@@ -88,12 +89,14 @@ async def test_execute_register_video_use_case(
     saved_job.frames_path = "frames"
     saved_job.notify_url = "http://test.com/notify"
     saved_job.config = {}
+    
+    mock_video_job_repository.find_by_job_ref.return_value = None
     mock_video_job_repository.save.return_value = saved_job
 
     result_job = await register_video_use_case.execute(dto)
 
     assert mock_video_job_repository.save.call_count == 2
-    mock_storage_gateway.upload_object.assert_called_once()
+    mock_storage_gateway.upload_file_obj.assert_called_once()
     mock_task_gateway.enqueue_video_processing_task.assert_called_once()
 
     assert result_job == saved_job
@@ -106,9 +109,11 @@ async def test_execute_register_video_use_case_with_error(
     mock_task_gateway,
     mock_notification_gateway
 ):
+    mock_video_job_repository.find_by_job_ref.return_value = None
     mock_notification_gateway.send_notification.return_value = None
     mock_file = AsyncMock(spec=UploadFile)
     mock_file.read.return_value = b"fake video content"
+    mock_file.file = Mock()
     mock_file.content_type = "video/mp4"
 
     dto = RegisterVideoDTO(
@@ -122,8 +127,8 @@ async def test_execute_register_video_use_case_with_error(
     with pytest.raises(Exception, match="Database error"):
         await register_video_use_case.execute(dto)
 
-    assert mock_video_job_repository.save.call_count == 1
+    assert mock_video_job_repository.save.call_count == 2
 
-    mock_video_job_repository.save.assert_called_once()
-    mock_storage_gateway.upload_object.assert_not_called()
+    mock_video_job_repository.save.assert_called_with(ANY)
+    mock_storage_gateway.upload_file_obj.assert_not_called()
     mock_task_gateway.enqueue_video_processing_task.assert_not_called()

@@ -3,6 +3,7 @@ import tempfile
 from typing import List
 
 from src.core.domain.dtos.video_frame_extractor.process_video_task_dto import ProcessVideoTaskDTO
+from src.core.domain.entities.storage_item import StorageItem
 from src.core.domain.entities.video_job import VideoJob
 from src.core.exceptions.entity_not_found_exception import EntityNotFoundException
 from src.core.ports.gateways.callbacks.i_notification_gateway import INotificationGateway
@@ -88,19 +89,13 @@ class ProcessVideoUseCase:
             raise
 
     def _upload_frames_in_bulk(self, frame_paths: List[str], video_job: VideoJob):
-        items_to_upload = []
         for frame_path in frame_paths:
-            with open(frame_path, 'rb') as f:
-                content = f.read()
-
-            frame_filename = os.path.basename(frame_path)
-            key_suffix = f"{frame_filename}"
-            
-            items_to_upload.append((content, key_suffix))
-
-        self._storage_gateway.upload_objects_bulk(
-            items=items_to_upload,
-            bucket=video_job.bucket,
-            prefix=f"{video_job.frames_path}/{video_job.client_identification}/{video_job.job_ref}",
-            content_type='image/png'
-        )
+            with open(frame_path, 'rb') as frame_file:
+                self._storage_gateway.upload_file_obj(
+                    StorageItem(
+                        bucket=video_job.bucket,
+                        key=f"{video_job.frames_path}/{video_job.client_identification}/{video_job.job_ref}/{os.path.basename(frame_path)}",
+                        file_object=frame_file,
+                        content_type='image/png'
+                    )
+                )

@@ -1,5 +1,7 @@
 import requests
 import logging
+
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 from src.core.ports.gateways.zipper.i_zipper_gateway import IZipperGateway
 from src.config.settings import ZIPPER_SERVICE_URL, ZIPPER_SERVICE_X_API_KEY
 
@@ -9,6 +11,11 @@ class ZipperServiceGateway(IZipperGateway):
         self.zipper_service_x_api_key = ZIPPER_SERVICE_X_API_KEY
         self.logger = logging.getLogger(__name__)
 
+    @retry(
+        stop=stop_after_attempt(10),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(requests.exceptions.RequestException)
+    )
     def send_video_to_zipper(self, video_process_result: dict):
         try:
             response = requests.post(

@@ -45,3 +45,7 @@ AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
 
 SQS_QUEUE_NAME = os.getenv('SQS_QUEUE_NAME', 'extract_frames_queue')
 
+if ENVIRONMENT == 'development':
+    SQS_QUEUE_NAME = f"{SQS_QUEUE_NAME}-dev"
+elif ENVIRONMENT == 'production':
+    SQS_QUEUE_NAME = f"{SQS_QUEUE_NAME}-prod"

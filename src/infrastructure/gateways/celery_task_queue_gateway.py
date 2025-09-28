@@ -11,16 +11,14 @@ class CeleryTaskQueueGateway(ITaskQueueGateway):
     def enqueue_video_processing_task(self, task_data: Dict[str, Any]) -> str:
         task = self._celery_app.send_task(
             'src.infrastructure.tasks.video_tasks.extract_frames_task',
-            args=[task_data],
-            queue='extract_frames_queue'
+            args=[task_data]
         )
         return task.id
     
     def notification_status_callback(self, task_data: Dict[str, Any]) -> str:
         task = self._celery_app.send_task(
             'src.infrastructure.tasks.notification_task.send_notification_task',
-            args=[task_data],
-            queue='notification_queue'
+            args=[task_data]
         )
         return task.id
 

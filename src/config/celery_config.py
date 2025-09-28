@@ -1,3 +1,4 @@
+import os
 from kombu import Queue
 
 task_serializer = 'json'
@@ -11,15 +12,23 @@ task_time_limit = 30 * 60
 task_soft_time_limit = 25 * 60
 default_retry_delay = 60
 max_retries = 3
-task_default_queue = 'default'
+
+_env = os.environ.get('ENVIRONMENT', '').lower()
+_suffix = '_dev' if _env == 'development' else ''
+
+default_q = f'default{_suffix}'
+extract_frames_q = f'extract_frames_queue{_suffix}'
+notification_q = f'notification_queue{_suffix}'
+
+task_default_queue = default_q
 task_queues = (
-    Queue('default'),
-    Queue('extract_frames_queue'),
-    Queue('notification_queue'),
+    Queue(default_q),
+    Queue(extract_frames_q),
+    Queue(notification_q),
 )
 task_routes = {
-    'src.infrastructure.tasks.video_tasks.extract_frames_task': {'queue': 'extract_frames_queue'},
-    'src.infrastructure.tasks.notification_task.send_notification_task': {'queue': 'notification_queue'},
+    'src.infrastructure.tasks.video_tasks.extract_frames_task': {'queue': extract_frames_q},
+    'src.infrastructure.tasks.notification_task.send_notification_task': {'queue': notification_q},
 }
 
 worker_prefetch_multiplier = 1

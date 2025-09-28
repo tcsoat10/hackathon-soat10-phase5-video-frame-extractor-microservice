@@ -119,7 +119,7 @@ resource "kubernetes_deployment" "frames_celery_worker" {
           }
           env {
             name  = "ZIPPER_SERVICE_URL"
-            value = "http://${data.terraform_remote_state.zipper.outputs.zipper_app_lb_endpoint}"
+            value = "http://${data.terraform_remote_state.zipper.outputs.zipper_app_lb_endpoint}/api/v1"
           }
           env {
             name  = "ZIPPER_SERVICE_X_API_KEY"

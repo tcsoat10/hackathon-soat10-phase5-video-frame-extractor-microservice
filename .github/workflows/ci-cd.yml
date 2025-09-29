@@ -92,45 +92,6 @@ jobs:
           name: coverage-report
           path: coverage.xml
           retention-days: 7 
-
-  run_sonarqube:
-
-    name: Build and analyze
-    if: false #SKIP
-    needs: [test]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository        
-        uses: actions/checkout@v4
-        with:
-          # O SonarQube precisa do histórico completo para análises mais precisas
-          fetch-depth: 0
-
-      - name: Download coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
-          path: . # Baixa o coverage.xml para a raiz do projeto
-
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5.3.0
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        with:
-          args: >
-            -Dsonar.login="admin"
-            -Dsonar.projectKey=soattc-payment-app
-            -Dsonar.sources=src
-            -Dsonar.tests=tests
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-
-      - name: SonarQube Quality Gate check
-        uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
   
   deploy_db:
     name: Deploy Database
@@ -274,7 +235,7 @@ jobs:
           aws ecr get-login-password --region ${{ env.REGION_DEFAULT }} | docker login --username AWS --password-stdin ${{ env.AWS_ECR_REGISTRY }}
 
       - name: Build and Push Docker Image
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main'
         id: build-image
         run: |
           # Build and push Docker image

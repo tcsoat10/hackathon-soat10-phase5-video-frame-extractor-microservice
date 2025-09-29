@@ -73,6 +73,7 @@ async def test_execute_register_video_use_case(
     mock_file.read.return_value = b"fake video content"
     mock_file.file = Mock()
     mock_file.content_type = "video/mp4"
+    mock_file.size = 209 * 1024 * 1024  # 209MB
 
     dto = RegisterVideoDTO(
         video_file=mock_file,
@@ -115,6 +116,7 @@ async def test_execute_register_video_use_case_with_error(
     mock_file.read.return_value = b"fake video content"
     mock_file.file = Mock()
     mock_file.content_type = "video/mp4"
+    mock_file.size = 209 * 1024 * 1024  # 209MB
 
     dto = RegisterVideoDTO(
         video_file=mock_file,

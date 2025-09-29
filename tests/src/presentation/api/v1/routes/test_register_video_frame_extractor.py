@@ -25,7 +25,7 @@ def test_send_empty_payload_for_route_register_video(client):
     }
 
 # Mock upload_object and enqueue_video_processing_task
-@patch('src.infrastructure.gateways.s3_storage_gateway.S3StorageGateway.upload_object')
+@patch('src.infrastructure.gateways.s3_storage_gateway.S3StorageGateway.upload_file_obj')
 @patch('src.infrastructure.gateways.celery_task_queue_gateway.CeleryTaskQueueGateway.enqueue_video_processing_task')
 def test_send_correct_payload_for_route_register_video(mock_enqueue_task, mock_upload_object, client):
     mock_enqueue_task.return_value = "mocked_task_id"

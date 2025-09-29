@@ -11,6 +11,7 @@ env:
   REGION_DEFAULT: "us-east-1"
   AWS_ECR_REGISTRY: "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com"
   PROJECT_NAME: "soattc-frames-app"
+  CLUSTER_NAME: "hacka-soat10tc-cluster-eks"
   CELERY_WORKER_DEPLOYMENT: "frames-celery-worker"
   CELERY_BEAT_DEPLOYMENT: "frames-celery-beat"
   APP_DEPLOYMENT: "frames-app"

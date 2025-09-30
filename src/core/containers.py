@@ -10,10 +10,12 @@ from src.infrastructure.repositories.mongoengine.video_job_repository import Mon
 from src.core.ports.repositories.i_video_job_repository import IVideoJobRepository
 from src.infrastructure.gateways.celery_task_queue_gateway import CeleryTaskQueueGateway
 from src.core.ports.cloud.object_storage_gateway import ObjectStorageGateway
+from src.core.ports.cloud.content_moderation_gateway import ContentModerationGateway
 from src.core.ports.tasks.i_task_queue_gateway import ITaskQueueGateway
 from src.infrastructure.video.ffmpeg_wrapper import FFmpegWrapper
 from src.presentation.api.v1.controllers.video_controller import VideoController
 from src.infrastructure.gateways.notification_gateway import NotificationGateway
+from src.infrastructure.gateways.rekognition_content_moderation_gateway import RekognitionContentModerationGateway
 
 
 class Container(containers.DeclarativeContainer):    
@@ -39,6 +41,10 @@ class Container(containers.DeclarativeContainer):
 
     object_storage_gateway: providers.Singleton[ObjectStorageGateway] = providers.Singleton(
         S3StorageGateway
+    )
+
+    content_moderation_gateway: providers.Singleton[ContentModerationGateway] = providers.Singleton(
+        RekognitionContentModerationGateway
     )
 
     notification_gateway = providers.Factory(NotificationGateway)

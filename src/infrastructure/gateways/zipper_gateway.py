@@ -23,6 +23,7 @@ class ZipperServiceGateway(IZipperGateway):
                 json=video_process_result,
                 headers={"x-api-key": self.zipper_service_x_api_key}
             )
+            print(f'Response text: {response.text}')
             response.raise_for_status()
             self.logger.info(f"Successfully sent video process result to Zipper Service: {video_process_result.get('job_ref')}")
             return response.json()

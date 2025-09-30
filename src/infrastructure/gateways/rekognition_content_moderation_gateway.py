@@ -43,6 +43,17 @@ class RekognitionContentModerationGateway(ContentModerationGateway):
         except Exception as e:
             error_msg = f"Erro inesperado na moderação: {e}"
             print(error_msg)
+            # Se o tipo do video for incompativel, deve prosseguir sem analisar até tratarmos o problema.
+            if 'Unsupported codec/format' in str(e):
+                print("Tipo de vídeo incompatível. Prosseguindo sem moderação.")
+                return {
+                    "is_appropriate": True,
+                    "confidence": 0.0,
+                    "labels": [],
+                    "job_id": job_id,
+                    "total_labels_found": 0
+                }
+
             raise Exception(error_msg)
     
     def _wait_for_job_completion(self, job_id: str, max_wait_time: int = 300) -> Dict[str, Any]:
@@ -75,7 +86,7 @@ class RekognitionContentModerationGateway(ContentModerationGateway):
                 error_msg = f"Erro ao verificar status do job {job_id}: {e}"
                 print(error_msg)
                 # Se o tipo do video for incompativel, deve prosseguir sem analisar até tratarmos o problema.
-                if e.response['Error']['Code'] == 'InvalidParameterException':
+                if 'Unsupported codec/format' in str(e):
                     print("Tipo de vídeo incompatível. Prosseguindo sem moderação.")
                     return {
                         "is_appropriate": True,

@@ -2,6 +2,7 @@ from typing import Dict, Any
 from dependency_injector.wiring import inject, Provide
 from src.config.celery_app import celery_app
 from src.core.application.use_cases.send_video_to_zipper_use_case import SendVideoToZipperUseCase
+from src.core.constants.video_job_status import VideoJobStatus
 from src.core.containers import Container
 from src.core.ports.gateways.zipper.i_zipper_gateway import IZipperGateway
 from src.core.ports.repositories.i_video_job_repository import IVideoJobRepository
@@ -40,6 +41,10 @@ def extract_frames_task(
             content_moderation_gateway=content_moderation_gateway
         )
         video_process_result = process_video_use_case.execute(dto)
+        
+        if video_process_result.get('status') == VideoJobStatus.REJECTED.status:
+            print(f"VideoJob {dto.job_ref} foi rejeitado. Encerrando a task.")
+            return {'status': 'rejected', 'job_ref': dto.job_ref, 'reason': video_process_result.get('reason')}
         
         send_video_to_zipper_use_case = SendVideoToZipperUseCase.build(
             zipper_gateway=zipper_gateway

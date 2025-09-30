@@ -19,9 +19,6 @@ class RegisterVideoDTO(BaseModel):
     @field_validator('video_file')
     @classmethod
     def validate_client_identification(cls, value: UploadFile):
-        if value.content_type not in ['video/mp4', 'video/avi', 'video/mov', 'video/mkv']:
-            raise ValueError('Unsupported video format. Supported formats: mp4, avi, mov, mkv')
-
         if value.size > 210 * 1024 * 1024:  # 210MB
             raise ValueError('Video file size exceeds the maximum limit of 200MB')
         

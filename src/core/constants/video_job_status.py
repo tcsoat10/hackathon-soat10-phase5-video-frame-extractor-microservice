@@ -5,6 +5,7 @@ class VideoJobStatus(Enum):
     QUEUED = ("QUEUED", "Queued for processing")
     PROCESSING = ("PROCESSING", "Processing in progress")
     COMPLETED = ("COMPLETED", "Processing completed")
+    REJECTED = ("REJECTED", "Content rejected by moderation")
     ERROR = ("ERROR", "An error occurred during processing")
     
     @property
